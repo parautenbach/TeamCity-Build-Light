@@ -3,5 +3,8 @@
 
 # Dev
 .coverage
+cover
 clonedigger.html
 nosetests.xml
+dist
+build

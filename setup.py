@@ -48,7 +48,7 @@ requirements = [str(install_requirement.req) for install_requirement in install_
 readme = pypandoc.convert('README.md', 'rst')
 
 # Install
-setup(name='XXX',
+setup(name='whatsthatlight',
       version='0.0.0.0',
       description='TeamCity blink(1) build light',
       long_description=readme,
@@ -67,10 +67,12 @@ setup(name='XXX',
       author_email='parautenbach@gmail.com',
       license='Apache License, Version 2.0',
       data_files=data_files,
-      # This installs to some location like /usr/bin, but most likely <ANACONDA>/bin (it depends on the environment).
-      scripts=['scripts/XXX'],
+      # This installs to some location like /usr/bin, but most likely <VIRTUAL_ENV>/bin (it depends on the environment).
+      # scripts=['scripts/'],
       packages=find_packages(),
-      requires=requirements,
-      install_requires=[],
+      requires=[],
+      install_requires=requirements,
       include_package_data=True,
       zip_safe=False)
+
+# TODO: Post-install stuff
