@@ -1,0 +1,3 @@
+#!/bin/bash
+
+pylint XXX --rcfile=.pylintrc -f text

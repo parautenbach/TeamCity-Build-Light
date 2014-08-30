@@ -1,0 +1,5 @@
+include README.md
+include COPYRIGHT
+include requirements.txt
+recursive-include conf *
+recursive-include scripts some_script

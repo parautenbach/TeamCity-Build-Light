@@ -1,0 +1,4 @@
+#!/bin/bash
+
+clonedigger . --distance-threshold=2 --ignore-dir=tests -o clonedigger.html
+open clonedigger.html

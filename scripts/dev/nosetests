@@ -1,0 +1,3 @@
+#!/bin/bash
+
+nosetests -w xxx -v --nocapture $1 --with-coverage --cover-branches --cover-inclusive --cover-package=xxx
