@@ -1,5 +1,7 @@
 # IntelliJ IDEA
-idea
+.idea
 
 # Dev
+.coverage
 clonedigger.html
+nosetests.xml

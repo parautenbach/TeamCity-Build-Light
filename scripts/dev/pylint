@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pylint XXX --rcfile=.pylintrc -f text
+pylint whatsthatlight --rcfile=.pylintrc -f text
