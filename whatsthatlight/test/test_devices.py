@@ -26,8 +26,12 @@ Tests.
 """
 
 # System imports
+import importlib
 import time
 import unittest
+
+# pylint: disable=redefined-builtin
+from mockito import mock, when, any
 
 # Local imports
 from whatsthatlight import devices
@@ -38,9 +42,9 @@ class MyTestCase(unittest.TestCase):
     Tests.
     """
 
-    def test_something(self):
+    def test_basic_sequence(self):
         """
-        No test.
+        A basic open, write and close sequence against an actual device.
         """
         # Test parameters
         expected_vendor_id = 0x27b8
@@ -54,9 +58,10 @@ class MyTestCase(unittest.TestCase):
         led_number = 0
         off_data = [0x01, 0x63, 0, 0, 0, th, tl, led_number]
         light_blue_data = [0x01, 0x63, red, green, blue, th, tl, led_number]
+        hidapi = importlib.import_module('hid')
 
         # Create
-        device = devices.HidApiDevice(vendor_id=expected_vendor_id, product_id=expected_product_id)
+        device = devices.HidApiDevice(vendor_id=expected_vendor_id, product_id=expected_product_id, hidapi=hidapi)
         self.assertEqual(expected_vendor_id, device.get_vendor_id())
         self.assertEqual(expected_product_id, device.get_product_id())
 
@@ -70,7 +75,7 @@ class MyTestCase(unittest.TestCase):
 
         # Light blue
         device.write(light_blue_data)
-        time.sleep(10*fade_millis/1000.0)
+        time.sleep(5*fade_millis/1000.0)
 
         # Off
         device.write(off_data)
@@ -79,6 +84,25 @@ class MyTestCase(unittest.TestCase):
         # Close
         device.close()
         self.assertFalse(device.is_open())
+
+    def test_write_device_error(self):
+        """
+        Test that an error is raised if not all data was written.
+        """
+        # Test parameters
+        vendor_id = 0
+        product_id = 0
+
+        # Mocks
+        hidapi = importlib.import_module('hid')
+        mock_device = mock(hidapi.device)
+        when(mock_device).write(any()).thenReturn(0)
+        mock_hidapi = mock(hidapi)
+        when(mock_hidapi).device().thenReturn(mock_device)
+
+        # Test
+        device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
+        self.assertRaises(devices.DeviceError, device.write, [0, 1, 2])
 
 
 if __name__ == '__main__':

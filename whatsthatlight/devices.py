@@ -16,9 +16,6 @@
 Devices.
 """
 
-# System imports
-import importlib
-
 # Local imports
 # from whatsthatlight import parser
 
@@ -34,17 +31,17 @@ class HidApiDevice(object):
     Wrapper class for an HID device using the Cython HID API module.
     """
 
-    def __init__(self, vendor_id, product_id):
+    def __init__(self, vendor_id, product_id, hidapi):
         """
         Constructor.
         :param vendor_id: the device's VID
         :param product_id: the device's PID
+        :param hidapi: An imported HID API package
         """
         self._packet_size = 64
         self._timeout = 50
         self._vendor_id = vendor_id
         self._product_id = product_id
-        hidapi = importlib.import_module('hid')
         self._device = hidapi.device()
         self._is_open = False
 
@@ -59,12 +56,6 @@ class HidApiDevice(object):
         Get the product ID of the device.
         """
         return self._product_id
-
-    def get_packet_size(self):
-        """
-        Get the size for sending data.
-        """
-        return self._packet_size
 
     def open(self):
         """
@@ -84,23 +75,9 @@ class HidApiDevice(object):
         Write raw data.
         :param data: the binary data
         """
-        self._device.write(data)
-        # TODO: Assert bytes
-
-    def read(self):
-        """
-        Read binary data.
-        """
-        return self._device.read(self._timeout)
-
-    def poll(self):
-        """
-        Poll the device.
-        """
-        # self._device.write([ord(i) for i in list(parser.get_challenge_request())])
-        # r = self._device.read(self._timeout)
-        # # self._logger.debug('\'{0}\''.format(utils.strip(r)))
-        # assert (parser.is_challenge_response(r))
+        nr_of_bytes = self._device.write(data)
+        if nr_of_bytes != len(data):
+            raise DeviceError('Could not write all data: {0}/{1} bytes'.format(nr_of_bytes, len(data)))
 
     def close(self):
         """
