@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Devices.
+Various USB light devices.
 """
 
 # Local imports
@@ -34,9 +34,9 @@ class HidApiDevice(object):
     def __init__(self, vendor_id, product_id, hidapi):
         """
         Constructor.
-        :param vendor_id: the device's VID
-        :param product_id: the device's PID
-        :param hidapi: An imported HID API package
+        :param vendor_id: The device's VID.
+        :param product_id: The device's PID.
+        :param hidapi: An imported HID API package.
         """
         self._packet_size = 64
         self._timeout = 50
@@ -73,7 +73,7 @@ class HidApiDevice(object):
     def write(self, data):
         """
         Write raw data.
-        :param data: the binary data
+        :param data: The binary data.
         """
         nr_of_bytes = self._device.write(data)
         if nr_of_bytes != len(data):

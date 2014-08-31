@@ -22,7 +22,7 @@
 # pylint: disable=no-member
 
 """
-Tests.
+Tests for various devices.
 """
 
 # System imports
@@ -37,9 +37,9 @@ from mockito import mock, when, any
 from whatsthatlight import devices
 
 
-class MyTestCase(unittest.TestCase):
+class TestHidApiDevice(unittest.TestCase):
     """
-    Tests.
+    HidApiDevice tests.
     """
 
     def test_basic_sequence(self):
