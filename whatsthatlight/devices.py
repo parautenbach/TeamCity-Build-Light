@@ -16,15 +16,6 @@
 Various USB light devices.
 """
 
-# Local imports
-# from whatsthatlight import parser
-
-
-class DeviceError(Exception):
-    """
-    Generic device exception.
-    """
-
 
 class HidApiDevice(object):
     """
@@ -77,7 +68,7 @@ class HidApiDevice(object):
         """
         nr_of_bytes = self._device.write(data)
         if nr_of_bytes != len(data):
-            raise DeviceError('Could not write all data: {0}/{1} bytes'.format(nr_of_bytes, len(data)))
+            raise IOError('Could not write all data: {0}/{1} bytes'.format(nr_of_bytes, len(data)))
 
     def close(self):
         """

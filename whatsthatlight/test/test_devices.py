@@ -102,7 +102,7 @@ class TestHidApiDevice(unittest.TestCase):
 
         # Test
         device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
-        self.assertRaises(devices.DeviceError, device.write, [0, 1, 2])
+        self.assertRaises(IOError, device.write, [0, 1, 2])
 
 
 if __name__ == '__main__':
