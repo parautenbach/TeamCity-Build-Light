@@ -48,7 +48,7 @@ class TestHidApiDevice(unittest.TestCase):
         """
         # Setup
         device = mock(devices.Device)
-        device_monitor = devices.DeviceMonitor(device=device)
+        device_monitor = devices.DeviceMonitor(device=device, interval=0.1)
 
         # Execute
         device_monitor.start()
