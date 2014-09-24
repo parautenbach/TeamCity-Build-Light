@@ -29,7 +29,12 @@ class TeamCityClient(object):
     """
 
     _COUNT_ATTRIBUTE = 'count'
+    _BUILD_TYPE_ATTRIBUTE = 'buildType'
+    _ID_ATTRIBUTE = 'id'
     _RUNNING_BUILDS_RESOURCE_TEMPLATE = '/httpAuth/app/rest/builds/?locator=user:{username},personal:false,canceled:false,running:true,count:1'
+    _BUILD_TYPES_RESOURCE = '/httpAuth/app/rest/buildTypes'
+    _BUILD_TYPE_RESOURCE_TEMPLATE = ('/httpAuth/app/rest/builds/?locator=buildType:{build_type_id},status:FAILURE,user:{username},personal:false,'
+                                     'canceled:false,running:any,count:1,sinceBuild:status:SUCCESS')
 
     def __init__(self, server_url, username, password):
         """
@@ -71,3 +76,25 @@ class TeamCityClient(object):
         response = self._session.get(url)
         json_data = response.json()
         return self._COUNT_ATTRIBUTE in json_data
+
+    def any_build_failures(self):
+        """
+        Checks whether any build are in a failed state or not.
+
+        :return: True if there are one or more builds have failed or are failing.
+        """
+        any_build_failures = False
+        build_types_url = urlparse.urljoin(self._server_url, self._BUILD_TYPES_RESOURCE)
+        build_types_response = self._session.get(build_types_url)
+        build_types_json_data = build_types_response.json()
+        if self._COUNT_ATTRIBUTE in build_types_json_data:
+            for build_type in build_types_json_data[self._BUILD_TYPE_ATTRIBUTE]:
+                build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(username=self._username,
+                                                                                build_type_id=build_type[self._ID_ATTRIBUTE])
+                build_type_url = urlparse.urljoin(self._server_url, build_type_resource)
+                build_type_response = self._session.get(build_type_url)
+                build_type_json_data = build_type_response.json()
+                if self._COUNT_ATTRIBUTE in build_type_json_data:
+                    any_build_failures = True
+                    break
+        return any_build_failures

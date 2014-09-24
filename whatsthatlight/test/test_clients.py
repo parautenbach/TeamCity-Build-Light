@@ -137,7 +137,7 @@ class TestTeamCityClient(unittest.TestCase):
         username = 'admin'
         password = 'admin'
         resource = '/httpAuth/app/rest/builds/'
-        body = ('{{"href": "{resource}?locator=user:{username},personal:false,canceled:false,running:true,count:1", "count": "1"}}'
+        body = ('{{"href": "{resource}?locator=user:{username},personal:false,canceled:false,running:true,count:1", "count": 1}}'
                 .format(resource=resource,
                         username=username))
         response = (200, {}, body)
@@ -184,6 +184,228 @@ class TestTeamCityClient(unittest.TestCase):
         self.assertEqual(actual_verb, expected_verb)
         self.assertDictContainsSubset(expected_headers_subset, actual_headers)
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
+
+    def test_any_build_failures_positive_with_skip(self):
+        """
+        Test that iterating over builds stop as soon as the first failed build is found.
+        """
+        # Expectations
+        expected_any_build_failures = True
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+        build_types_resource = '/httpAuth/app/rest/buildTypes'
+        build_types_body = """
+                           {
+                               "count": 5,
+                               "buildType": [
+                                               {"id": "TestProject_BuildConfigA"},
+                                               {"id": "TestProject_BuildConfigB"},
+                                               {"id": "TestProject_BuildConfigC"},
+                                               {"id": "TestProject_BuildConfigD"},
+                                               {"id": "TestProject_BuildConfigE"}
+                                           ]
+                           }
+                           """
+        build_types_response = (200, {}, build_types_body)
+        build_type_resource = '/httpAuth/app/rest/builds/'
+        build_type_body_status_success = '{}'
+        build_type_body_status_failure = '{"count": 1}'
+        build_types_response_a = (200, {}, build_type_body_status_success)
+        build_types_response_b = (200, {}, build_type_body_status_success)
+        build_types_response_c = (200, {}, build_type_body_status_success)
+        build_types_response_d = (200, {}, build_type_body_status_failure)
+        build_types_response_e = (200, {}, build_type_body_status_success)
+        responses = {
+            expected_verb: {
+                build_types_resource: [build_types_response],
+                build_type_resource: [build_types_response_a,
+                                      build_types_response_b,
+                                      build_types_response_c,
+                                      build_types_response_d,
+                                      build_types_response_e]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_build_failures = client.any_build_failures()
+            # event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        # 1 to get the list of build types, and 4 more checking builds, but the last (the 5th) gets skipped
+        self.assertEqual(5, len(requests))
+        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
+
+    def test_any_build_failures_negative(self):
+        """
+        Test for when there are no builds in a failed state.
+        """
+        # Expectations
+        expected_any_build_failures = False
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+        build_types_resource = '/httpAuth/app/rest/buildTypes'
+        build_types_body = """
+                           {
+                               "count": 5,
+                               "buildType": [
+                                               {"id": "TestProject_BuildConfigA"},
+                                               {"id": "TestProject_BuildConfigB"},
+                                               {"id": "TestProject_BuildConfigC"},
+                                               {"id": "TestProject_BuildConfigD"},
+                                               {"id": "TestProject_BuildConfigE"}
+                                           ]
+                           }
+                           """
+        build_types_response = (200, {}, build_types_body)
+        build_type_resource = '/httpAuth/app/rest/builds/'
+        build_type_body_status_success = '{}'
+        build_types_response_a = (200, {}, build_type_body_status_success)
+        build_types_response_b = (200, {}, build_type_body_status_success)
+        build_types_response_c = (200, {}, build_type_body_status_success)
+        build_types_response_d = (200, {}, build_type_body_status_success)
+        build_types_response_e = (200, {}, build_type_body_status_success)
+        responses = {
+            expected_verb: {
+                build_types_resource: [build_types_response],
+                build_type_resource: [build_types_response_a,
+                                      build_types_response_b,
+                                      build_types_response_c,
+                                      build_types_response_d,
+                                      build_types_response_e]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_build_failures = client.any_build_failures()
+            # event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(6, len(requests))
+        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
+
+    def test_any_build_failures_negative_no_data(self):
+        """
+        Test for when there are builds in a failed state.
+        """
+        # Expectations
+        expected_any_build_failures = False
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+        build_types_resource = '/httpAuth/app/rest/buildTypes'
+        build_types_body = '{}'
+        build_types_response = (200, {}, build_types_body)
+        responses = {
+            expected_verb: {
+                build_types_resource: [build_types_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_build_failures = client.any_build_failures()
+            # event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(1, len(requests))
+        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
 
 
 class _SimpleHttpServer(object):

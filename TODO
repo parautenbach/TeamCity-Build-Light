@@ -2,3 +2,9 @@
 - Add configuration
 - Create distributions
 - Test across platforms
+- Server exceptions
+- Colors:
+-- Red: Failure
+-- Green: Success
+-- Yellow: Building
+-- Blue: Unknown
