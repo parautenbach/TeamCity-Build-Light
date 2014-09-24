@@ -39,7 +39,7 @@ from whatsthatlight import devices
 
 class TestHidApiDevice(unittest.TestCase):
     """
-    HidApiDevice tests.
+    HID API device tests.
     """
 
     def test_basic_sequence(self):

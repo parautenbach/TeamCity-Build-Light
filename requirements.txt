@@ -16,4 +16,5 @@ teamcity-messages==1.8
 # application
 # brew install pandoc / apt-get install pandoc
 pypandoc==0.8.2
+requests==2.4.1
 ujson==1.33

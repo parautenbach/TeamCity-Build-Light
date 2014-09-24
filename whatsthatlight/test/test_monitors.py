@@ -22,7 +22,7 @@
 # pylint: disable=no-member
 
 """
-Tests for various devices.
+Tests for various monitors.
 """
 
 # System imports
@@ -34,11 +34,12 @@ from mockito import mock, when
 
 # Local imports
 from whatsthatlight import devices
+from whatsthatlight import monitors
 
 
-class TestHidApiDevice(unittest.TestCase):
+class TestDeviceMonitor(unittest.TestCase):
     """
-    HidApiDevice tests.
+    Device monitor tests.
     """
 
     @staticmethod
@@ -48,7 +49,7 @@ class TestHidApiDevice(unittest.TestCase):
         """
         # Setup
         device = mock(devices.Device)
-        device_monitor = devices.DeviceMonitor(device=device, interval=0.1)
+        device_monitor = monitors.DeviceMonitor(device=device, interval=0.1)
 
         # Execute
         device_monitor.start()
@@ -83,7 +84,7 @@ class TestHidApiDevice(unittest.TestCase):
         # Setup
         wait_event = threading.Event()
         wait_event.clear()
-        device_monitor = devices.DeviceMonitor(device=device, interval=interval)
+        device_monitor = monitors.DeviceMonitor(device=device, interval=interval)
 
         # Handlers
         def added():
@@ -112,6 +113,23 @@ class TestHidApiDevice(unittest.TestCase):
         # Test
         self.assertTrue(wait_event.is_set(), 'The expected number of events were not triggered')
         self.assertListEqual(expected_events, actual_events, 'Unexpected events or events order')
+
+
+class TestServerMonitor(unittest.TestCase):
+    """
+    Server monitor tests.
+    """
+
+    @staticmethod
+    def test_start_stop():
+        """
+        Test the start and stop behaviour.
+        """
+
+        server_monitor = monitors.ServerMonitor()
+
+        server_monitor.start()
+        server_monitor.stop()
 
 
 if __name__ == '__main__':
