@@ -258,7 +258,7 @@ class TestTeamCityClient(unittest.TestCase):
             client.connect()
             event.clear()
             actual_any_build_failures = client.any_build_failures()
-            # event.wait()
+            event.wait()
         finally:
             client.disconnect()
             server.stop()
@@ -340,7 +340,7 @@ class TestTeamCityClient(unittest.TestCase):
             client.connect()
             event.clear()
             actual_any_build_failures = client.any_build_failures()
-            # event.wait()
+            event.wait()
         finally:
             client.disconnect()
             server.stop()
@@ -398,7 +398,7 @@ class TestTeamCityClient(unittest.TestCase):
             client.connect()
             event.clear()
             actual_any_build_failures = client.any_build_failures()
-            # event.wait()
+            event.wait()
         finally:
             client.disconnect()
             server.stop()
