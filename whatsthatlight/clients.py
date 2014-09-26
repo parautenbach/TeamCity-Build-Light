@@ -17,30 +17,24 @@ Various build server clients.
 """
 
 # System imports
+import abc
 import urlparse
 
 # Third-party imports
 import requests
 
 
-class TeamCityClient(object):
+class BaseClient(object):
     """
-    A TeamCity API client.
+    An abstract build server client.
     """
-
-    _COUNT_ATTRIBUTE = 'count'
-    _BUILD_TYPE_ATTRIBUTE = 'buildType'
-    _ID_ATTRIBUTE = 'id'
-    _RUNNING_BUILDS_RESOURCE_TEMPLATE = '/httpAuth/app/rest/builds/?locator=user:{username},personal:false,canceled:false,running:true,count:1'
-    _BUILD_TYPES_RESOURCE = '/httpAuth/app/rest/buildTypes'
-    _BUILD_TYPE_RESOURCE_TEMPLATE = ('/httpAuth/app/rest/builds/?locator=buildType:{build_type_id},status:FAILURE,user:{username},personal:false,'
-                                     'canceled:false,running:any,count:1,sinceBuild:status:SUCCESS')
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, server_url, username, password):
         """
         Constructor.
 
-        :param server_url: The base URL to the TeamCity API.
+        :param server_url: The base URL to the build server's API.
         :param username: The username for the API, which is also the user for which the API is checked.
         :param password: The password for the provided username.
         """
@@ -64,6 +58,36 @@ class TeamCityClient(object):
         Disconnect from the API.
         """
         self._session = None
+
+    @abc.abstractmethod  # pragma: no cover
+    def any_builds_running(self):
+        """
+        Checks whether any builds are running or not.
+
+        :return: True if there are one or more builds running.
+        """
+
+    @abc.abstractmethod  # pragma: no cover
+    def any_build_failures(self):
+        """
+        Checks whether any build are in a failed state or not.
+
+        :return: True if there are one or more builds have failed or are failing.
+        """
+
+
+class TeamCityClient(BaseClient):
+    """
+    A TeamCity API client.
+    """
+
+    _COUNT_ATTRIBUTE = 'count'
+    _BUILD_TYPE_ATTRIBUTE = 'buildType'
+    _ID_ATTRIBUTE = 'id'
+    _RUNNING_BUILDS_RESOURCE_TEMPLATE = '/httpAuth/app/rest/builds/?locator=user:{username},personal:false,canceled:false,running:true,count:1'
+    _BUILD_TYPES_RESOURCE = '/httpAuth/app/rest/buildTypes'
+    _BUILD_TYPE_RESOURCE_TEMPLATE = ('/httpAuth/app/rest/builds/?locator=buildType:{build_type_id},status:FAILURE,user:{username},personal:false,'
+                                     'canceled:false,running:any,count:1,sinceBuild:status:SUCCESS')
 
     def any_builds_running(self):
         """

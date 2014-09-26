@@ -49,15 +49,7 @@ class TestHidApiDevice(unittest.TestCase):
         # Test parameters
         expected_vendor_id = 0x27b8
         expected_product_id = 0x01ed
-        red = 0
-        green = 200
-        blue = 200
-        fade_millis = 100
-        th = (fade_millis & 0xff00) >> 8
-        tl = fade_millis & 0x00ff
-        led_number = 0
-        off_data = [0x01, 0x63, 0, 0, 0, th, tl, led_number]
-        light_blue_data = [0x01, 0x63, red, green, blue, th, tl, led_number]
+        wait_time = 1
         hidapi = importlib.import_module('hid')
 
         # Create
@@ -69,17 +61,25 @@ class TestHidApiDevice(unittest.TestCase):
         device.open()
         self.assertTrue(device.is_open())
 
-        # Off
-        device.write(off_data)
-        time.sleep(fade_millis/1000.0)
+        # Unknown (blue)
+        print('Unknown => Blue')
+        device.write(any_builds_running=None, any_build_failures=None)
+        time.sleep(wait_time)
 
-        # Light blue
-        device.write(light_blue_data)
-        time.sleep(5*fade_millis/1000.0)
+        # Failure (red)
+        print('Failure => Red')
+        device.write(any_builds_running=False, any_build_failures=True)
+        time.sleep(wait_time)
 
-        # Off
-        device.write(off_data)
-        time.sleep(fade_millis/1000.0)
+        # Running (yellow)
+        print('Running => Yellow')
+        device.write(any_builds_running=True, any_build_failures=False)
+        time.sleep(wait_time)
+
+        # Success (green)
+        print('Success => Green')
+        device.write(any_builds_running=False, any_build_failures=False)
+        time.sleep(wait_time)
 
         # Close
         device.close()
@@ -102,7 +102,7 @@ class TestHidApiDevice(unittest.TestCase):
 
         # Test
         device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
-        self.assertRaises(IOError, device.write, [0, 1, 2])
+        self.assertRaises(IOError, device.write, any_builds_running=None, any_build_failures=None)
 
 
 if __name__ == '__main__':

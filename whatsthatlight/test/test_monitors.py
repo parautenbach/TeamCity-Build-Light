@@ -35,7 +35,7 @@ from mockito import mock, when
 # Local imports
 from whatsthatlight import devices
 from whatsthatlight import monitors
-from whatsthatlight.clients import TeamCityClient
+from whatsthatlight import clients
 
 
 class TestDeviceMonitor(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestDeviceMonitor(unittest.TestCase):
         Test the start and stop behaviour.
         """
         # Setup
-        device = mock(devices.Device)
+        device = mock(devices.BaseDevice)
         device_monitor = monitors.DeviceMonitor(device=device,
                                                 polling_interval=0.1)
 
@@ -68,7 +68,7 @@ class TestDeviceMonitor(unittest.TestCase):
         polling_interval = 0.1
 
         # Mocks
-        device = mock(devices.Device)
+        device = mock(devices.BaseDevice)
         (when(device).open()
          # No change, as we assuming no device is plugged in when started
          .thenRaise(IOError())
@@ -128,7 +128,7 @@ class TestServerMonitor(unittest.TestCase):
         """
         Test the start and stop behaviour.
         """
-        client = mock(TeamCityClient)
+        client = mock(clients.TeamCityClient)
         server_monitor = monitors.ServerMonitor(client=client,
                                                 polling_interval=0.1)
         server_monitor.start()
@@ -158,7 +158,7 @@ class TestServerMonitor(unittest.TestCase):
             event.set()
 
         # Mocks
-        client = mock(TeamCityClient)
+        client = mock(clients.TeamCityClient)
         when(client).any_builds_running().thenReturn(expected_any_builds_running)
         when(client).any_build_failures().thenReturn(expected_any_build_failures)
 
@@ -172,7 +172,7 @@ class TestServerMonitor(unittest.TestCase):
         server_monitor.stop()
 
         # Test
-        self.assertTrue(event.is_set())
+        self.assertTrue(event.is_set(), 'Timeout')
         self.assertEqual(1, len(server_events))
         (actual_any_builds_running, actual_any_build_failures) = server_events[0]
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
@@ -202,7 +202,7 @@ class TestServerMonitor(unittest.TestCase):
             event.set()
 
         # Mocks
-        client = mock(TeamCityClient)
+        client = mock(clients.TeamCityClient)
         when(client).any_builds_running().thenRaise(Exception('Test exception'))
 
         # Execute
@@ -215,7 +215,7 @@ class TestServerMonitor(unittest.TestCase):
         server_monitor.stop()
 
         # Test
-        self.assertTrue(event.is_set())
+        self.assertTrue(event.is_set(), 'Timeout')
         self.assertEqual(1, len(server_events))
         (actual_any_builds_running, actual_any_build_failures) = server_events[0]
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)

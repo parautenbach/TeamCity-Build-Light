@@ -17,6 +17,7 @@ Various monitors.
 """
 
 # System imports
+import logging
 import threading
 import time
 
@@ -112,6 +113,7 @@ class ServerMonitor(object):
         self._handler = None
         self._running = False
         self._thread = None
+        self._logger = logging.getLogger()
 
     def start(self):
         """
@@ -147,12 +149,14 @@ class ServerMonitor(object):
         while self._running:
             if self._handler:
                 # noinspection PyBroadException
-                # pylint: disable=bare-except
+                # pylint: disable=broad-except
                 try:
                     any_builds_running = self._client.any_builds_running()
                     any_build_failures = self._client.any_build_failures()
                     self._handler(any_builds_running, any_build_failures)
-                except:
+                except Exception, error:
+                    self._logger.error(error)
                     self._handler(None, None)
-                # pylint: enable=bare-except
-            time.sleep(self._polling_interval)
+                finally:
+                    time.sleep(self._polling_interval)
+                # pylint: enable=broad-except

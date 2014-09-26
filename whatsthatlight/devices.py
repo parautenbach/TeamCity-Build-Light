@@ -20,7 +20,7 @@ Various USB light devices.
 import abc
 
 
-class Device(object):
+class BaseDevice(object):
     """
     An abstract device.
     """
@@ -31,12 +31,16 @@ class Device(object):
     def get_vendor_id(self):
         """
         Get the vendor ID of the device.
+
+        :return: The VID.
         """
 
     @abc.abstractmethod  # pragma: no cover
     def get_product_id(self):
         """
         Get the product ID of the device.
+
+        :return: The PID.
         """
 
     @abc.abstractmethod  # pragma: no cover
@@ -52,10 +56,12 @@ class Device(object):
         """
 
     @abc.abstractmethod  # pragma: no cover
-    def write(self, data):
+    def write(self, any_builds_running, any_build_failures):
         """
         Write raw data.
-        :param data: The binary data.
+
+        :param any_builds_running: True if any builds running. None if unknown or undefined.
+        :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
         """
 
     @abc.abstractmethod  # pragma: no cover
@@ -65,14 +71,22 @@ class Device(object):
         """
 
 
-class HidApiDevice(Device):
+class HidApiDevice(BaseDevice):
     """
     Wrapper class for an HID device using the Cython HID API module.
     """
 
+    _RED = (230, 0, 0)
+    _GREEN = (0, 255, 0)
+    _BLUE = (0, 200, 255)
+    _YELLOW = (200, 120, 0)
+    _LED_NUMBER = 0
+    _FADE_MILLIS = 100
+
     def __init__(self, vendor_id, product_id, hidapi):
         """
         Constructor.
+
         :param vendor_id: The device's VID.
         :param product_id: The device's PID.
         :param hidapi: An imported HID API package.
@@ -83,6 +97,8 @@ class HidApiDevice(Device):
         self._product_id = product_id
         self._device = hidapi.device()
         self._is_open = False
+        self._th = (self._FADE_MILLIS & 0xff00) >> 8
+        self._tl = self._FADE_MILLIS & 0x00ff
 
     def get_vendor_id(self):
         """
@@ -109,11 +125,42 @@ class HidApiDevice(Device):
         """
         return self._is_open
 
-    def write(self, data):
+    def _encode(self, any_builds_running, any_build_failures):
+        """
+        Encode build server state.
+
+        :param any_builds_running: True if any builds running. None if unknown or undefined.
+        :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
+        :return: Binary data.
+        """
+        # Running builds take precedence
+        if any_builds_running is True:
+            return self._create_packet(HidApiDevice._YELLOW)
+        elif any_build_failures is True:
+            return self._create_packet(HidApiDevice._RED)
+        elif any_build_failures is False:
+            return self._create_packet(HidApiDevice._GREEN)
+        else:
+            return self._create_packet(HidApiDevice._BLUE)
+
+    def _create_packet(self, colour):
+        """
+        Create a binary data packet from a RGB colour tuple.
+
+        :param colour: An RGB colour tuple.
+        :return: Binary data.
+        """
+        (red, green, blue) = colour
+        return [0x01, 0x63, red, green, blue, self._th, self._tl, HidApiDevice._LED_NUMBER]
+
+    def write(self, any_builds_running, any_build_failures):
         """
         Write raw data.
-        :param data: The binary data.
+
+        :param any_builds_running: True if any builds running. None if unknown or undefined.
+        :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
         """
+        data = self._encode(any_builds_running, any_build_failures)
         nr_of_bytes = self._device.write(data)
         if nr_of_bytes != len(data):
             raise IOError('Could not write all data: {0}/{1} bytes'.format(nr_of_bytes, len(data)))
