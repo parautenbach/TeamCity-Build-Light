@@ -76,10 +76,10 @@ class HidApiDevice(BaseDevice):
     Wrapper class for an HID device using the Cython HID API module.
     """
 
-    _RED = (230, 0, 0)
-    _GREEN = (0, 255, 0)
-    _BLUE = (0, 200, 255)
-    _YELLOW = (200, 120, 0)
+    _DEFAULT_FAILURE_COLOUR = (230, 0, 0)
+    _DEFAULT_SUCCESS_COLOUR = (0, 255, 0)
+    _DEFAULT_UNDEFINED_COLOUR = (0, 200, 255)
+    _DEFAULT_RUNNING_COLOUR = (200, 120, 0)
     _LED_NUMBER = 0
     _FADE_MILLIS = 100
 
@@ -135,13 +135,13 @@ class HidApiDevice(BaseDevice):
         """
         # Running builds take precedence
         if any_builds_running is True:
-            return self._create_packet(HidApiDevice._YELLOW)
+            return self._create_packet(HidApiDevice._DEFAULT_RUNNING_COLOUR)
         elif any_build_failures is True:
-            return self._create_packet(HidApiDevice._RED)
+            return self._create_packet(HidApiDevice._DEFAULT_FAILURE_COLOUR)
         elif any_build_failures is False:
-            return self._create_packet(HidApiDevice._GREEN)
+            return self._create_packet(HidApiDevice._DEFAULT_SUCCESS_COLOUR)
         else:
-            return self._create_packet(HidApiDevice._BLUE)
+            return self._create_packet(HidApiDevice._DEFAULT_UNDEFINED_COLOUR)
 
     def _create_packet(self, colour):
         """
