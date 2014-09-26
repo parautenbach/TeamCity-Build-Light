@@ -26,12 +26,12 @@ class DeviceMonitor(object):
     A simple polling device monitor, to have something that works across commonly platforms.
     """
 
-    def __init__(self, device, interval=1):
+    def __init__(self, device, polling_interval=1):
         """
         Constructor.
 
         :param device: A Device instance.
-        :param interval: The polling interval in seconds, as a float.
+        :param polling_interval: The polling interval in seconds, as a float.
         """
         self._device = device
         self._connected = False
@@ -39,7 +39,7 @@ class DeviceMonitor(object):
         self._thread = None
         self._added_handler = None
         self._removed_handler = None
-        self._interval = interval
+        self._polling_interval = polling_interval
 
     def start(self):
         """
@@ -92,7 +92,7 @@ class DeviceMonitor(object):
                 self._connected = True
                 self._added_handler()
             # else:
-            time.sleep(self._interval)
+            time.sleep(self._polling_interval)
 
 
 class ServerMonitor(object):
@@ -100,20 +100,59 @@ class ServerMonitor(object):
     Monitors a build server.
     """
 
-    def __init__(self, polling_interval=5):
+    def __init__(self, client, polling_interval=5):
         """
         Constructor.
 
+        :param client: A build server client.
         :param polling_interval: The interval, in seconds, between checks.
         """
+        self._client = client
         self._polling_interval = polling_interval
+        self._handler = None
+        self._running = False
+        self._thread = None
 
     def start(self):
         """
         Start the monitor.
         """
+        self._client.connect()
+        self._thread = threading.Thread(target=self._run)
+        self._thread.start()
 
     def stop(self):
         """
         Stop the monitor.
         """
+        self._running = False
+        self._thread.join()
+        self._client.disconnect()
+
+    def set_handler(self, handler):
+        """
+        Set a handler for when any builds are running.
+
+        :param handler: A function which accept the parameters (any_builds_running, any_build_failures),
+                        where both parameters are boolean. A value if None indicates an undefined or unknown
+                        state.
+        """
+        self._handler = handler
+
+    def _run(self):
+        """
+        Polling thread.
+        """
+        self._running = True
+        while self._running:
+            if self._handler:
+                # noinspection PyBroadException
+                # pylint: disable=bare-except
+                try:
+                    any_builds_running = self._client.any_builds_running()
+                    any_build_failures = self._client.any_build_failures()
+                    self._handler(any_builds_running, any_build_failures)
+                except:
+                    self._handler(None, None)
+                # pylint: enable=bare-except
+            time.sleep(self._polling_interval)
