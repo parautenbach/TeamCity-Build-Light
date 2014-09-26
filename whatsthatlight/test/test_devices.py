@@ -49,6 +49,7 @@ class TestHidApiDevice(unittest.TestCase):
         # Test parameters
         expected_vendor_id = 0x27b8
         expected_product_id = 0x01ed
+        # We assume fade millis is 100ms, so we'll wait 1s
         wait_time = 1
         hidapi = importlib.import_module('hid')
 
