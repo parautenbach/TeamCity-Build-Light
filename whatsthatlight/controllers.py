@@ -55,13 +55,6 @@ class Controller(object):
             (any_builds_running, any_build_failures) = self._build_state
             self._device.write(any_builds_running, any_build_failures)
 
-        def _device_removed_handler():
-            """
-            Device removed handler.
-            """
-            self._logger.info('Device removed')
-            self._device.close()
-
         def _server_handler(any_builds_running, any_build_failures):
             """
             Server handler.
@@ -79,7 +72,6 @@ class Controller(object):
 
         # Set handlers
         self._device_monitor.set_added_handler(_device_added_handler)
-        self._device_monitor.set_removed_handler(_device_removed_handler)
         self._server_monitor.set_handler(_server_handler)
 
         # Start
