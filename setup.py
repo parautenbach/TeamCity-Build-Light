@@ -53,7 +53,7 @@ setup(name='whatsthatlight',
       description='TeamCity blink(1) build light',
       long_description=readme,
       # https://pypi.python.org/pypi?:action=list_classifiers
-      classifiers=['Development Status :: 1 - Planning',
+      classifiers=['Development Status :: 2 - Pre-Alpha',
                    'Intended Audience :: Developers',
                    'Intended Audience :: End Users/Desktop',
                    'License :: OSI Approved :: Apache Software License',

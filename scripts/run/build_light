@@ -52,6 +52,8 @@ except ImportError:
           file=sys.stderr)
     exit(1)
 
+from whatsthatlight import config_utils
+
 
 # noinspection PyUnusedLocal
 def _stop_handler(_signum, _frame):
@@ -86,13 +88,6 @@ def _reload_config_handler(_signum, _frame):
         _logger.info('Reload failed')
         _logger.error(exception)
         return
-    # This works because the processors have references to these variables.
-    # Consider adding setters to the processors to set new models more explicitly.
-    _logger.info('Reloading processor models')
-    _models = config_utils.load_models(config_parser)
-    _logger.info('Reloading decision model')
-    _decision_model = config_utils.load_decision_model(config_parser)
-    _logger.info('Reloading main service')
     _service.reload()
     _logger.info('Reloaded')
 
