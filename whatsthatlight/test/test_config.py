@@ -53,7 +53,7 @@ class TestConfig(unittest.TestCase):
         # Server
         expected_client_namespace = 'whatsthatlight.clients'
         expected_client_class_name = 'TeamCityClient'
-        expected_server_url = 'http://localhost:8111/'
+        expected_server_url = 'http://example.com/'
         expected_server_username = 'user'
         expected_server_password = 'pass'
         expected_client_args = (expected_server_url, expected_server_username, expected_server_password)

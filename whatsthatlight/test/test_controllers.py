@@ -81,7 +81,7 @@ class TestController(unittest.TestCase):
         expected_any_builds_running_1 = True
         expected_any_build_failures_1 = False
         expected_data_1 = (expected_any_builds_running_1, expected_any_build_failures_1)
-        polling_interval = 0.2
+        polling_interval = 0.5
 
         device_data = []
         event = threading.Event()

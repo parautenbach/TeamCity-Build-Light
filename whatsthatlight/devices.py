@@ -22,7 +22,7 @@ import abc
 
 class BaseDevice(object):
     """
-    An abstract device.
+    An abstract device for blink(1) devices.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -89,7 +89,7 @@ class HidApiDevice(BaseDevice):
 
         :param vendor_id: The device's VID.
         :param product_id: The device's PID.
-        :param hidapi: An imported HID API package.
+        :param hidapi: An imported HID API package/module.
         """
         self._packet_size = 64
         self._timeout = 50

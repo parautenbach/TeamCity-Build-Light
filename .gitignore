@@ -8,3 +8,6 @@ clonedigger.html
 nosetests.xml
 dist
 build
+
+whatsthatlight/test/no_such.log
+whatsthatlight/test/test.ini
