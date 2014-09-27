@@ -27,6 +27,18 @@ class BaseDevice(object):
 
     __metaclass__ = abc.ABCMeta
 
+    def __init__(self, vendor_id, product_id, hidapi):
+        """
+        Constructor.
+
+        :param vendor_id: The device's VID.
+        :param product_id: The device's PID.
+        :param hidapi: An imported HID API package/module. Write a wrapper if you need to.
+        """
+        self._vendor_id = vendor_id
+        self._product_id = product_id
+        self._device = hidapi.device()
+
     @abc.abstractmethod  # pragma: no cover
     def get_vendor_id(self):
         """
@@ -91,11 +103,9 @@ class HidApiDevice(BaseDevice):
         :param product_id: The device's PID.
         :param hidapi: An imported HID API package/module.
         """
+        super(HidApiDevice, self).__init__(vendor_id, product_id, hidapi)
         self._packet_size = 64
         self._timeout = 50
-        self._vendor_id = vendor_id
-        self._product_id = product_id
-        self._device = hidapi.device()
         self._is_open = False
         self._th = (self._FADE_MILLIS & 0xff00) >> 8
         self._tl = self._FADE_MILLIS & 0x00ff
