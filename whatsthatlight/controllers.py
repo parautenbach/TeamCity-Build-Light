@@ -17,6 +17,7 @@ Service controllers for controlling a device and client connection together.
 """
 
 # System imports
+import threading
 import logging
 
 
@@ -44,6 +45,8 @@ class Controller(object):
         Start the controller and dependencies.
         """
 
+        event = threading.Event()
+
         def _device_added_handler():
             """
             Device added handler.
@@ -54,6 +57,7 @@ class Controller(object):
             self._device.open()
             (any_builds_running, any_build_failures) = self._build_state
             self._device.write(any_builds_running, any_build_failures)
+            event.set()
 
         def _server_handler(any_builds_running, any_build_failures):
             """
@@ -74,8 +78,10 @@ class Controller(object):
         self._device_monitor.set_added_handler(_device_added_handler)
         self._server_monitor.set_handler(_server_handler)
 
-        # Start
+        # Synchronised start
+        event.clear()
         self._device_monitor.start()
+        event.wait(1)
         self._server_monitor.start()
 
     def stop(self):

@@ -77,11 +77,12 @@ class TestController(unittest.TestCase):
         Test that the initial state and device added state is set.
         """
         # Test parameters
+        expected_nr_of_writes = 2
         expected_data_0 = (None, None)
         expected_any_builds_running_1 = True
         expected_any_build_failures_1 = False
         expected_data_1 = (expected_any_builds_running_1, expected_any_build_failures_1)
-        polling_interval = 0.5
+        polling_interval = 0.1
 
         device_data = []
         event = threading.Event()
@@ -95,7 +96,8 @@ class TestController(unittest.TestCase):
             :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
             """
             device_data.append((any_builds_running, any_build_failures))
-            event.set()
+            if len(device_data) == expected_nr_of_writes:
+                event.set()
 
         # Mocks
         device = mock(devices.BaseDevice)
@@ -107,9 +109,9 @@ class TestController(unittest.TestCase):
 
         # Setup
         device_monitor = monitors.DeviceMonitor(device=device,
-                                                polling_interval=polling_interval)
+                                                polling_interval=1 * polling_interval)
         server_monitor = monitors.ServerMonitor(client=client,
-                                                polling_interval=polling_interval)
+                                                polling_interval=5 * polling_interval)
         controller = controllers.Controller(device=device,
                                             device_monitor=device_monitor,
                                             server_monitor=server_monitor)
@@ -117,12 +119,12 @@ class TestController(unittest.TestCase):
         # Execute
         event.clear()
         controller.start()
-        event.wait(2 * polling_interval)
+        event.wait(polling_interval)
         controller.stop()
 
         # Test
         self.assertTrue(event.is_set(), 'Timeout')
-        self.assertEqual(2, len(device_data))
+        self.assertEqual(expected_nr_of_writes, len(device_data))
         actual_data = device_data[0]
         self.assertEqual(actual_data, expected_data_0)
         actual_data = device_data[1]
