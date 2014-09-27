@@ -15,4 +15,4 @@
 # limitations under the License.
 
 export PYTHONPATH=.:$PYTHONPATH
-exec ./scripts/build_light "$@"
+exec ./scripts/run/build_light "$@"
