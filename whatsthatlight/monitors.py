@@ -87,9 +87,10 @@ class DeviceMonitor(object):
         while self._running:
             try:
                 self._logger.debug('Polling for device')
-                self._device.open()
+                if not self._device.is_open():
+                    self._device.open()
+                    self._device.close()
                 could_open = True
-                self._device.close()
             except IOError:
                 could_open = False
             if self._connected and not could_open and self._removed_handler:

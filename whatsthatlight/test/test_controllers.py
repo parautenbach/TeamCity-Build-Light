@@ -136,10 +136,9 @@ class TestController(unittest.TestCase):
         self.assertEqual(actual_data, expected_data_1)
 
     @staticmethod
-    @unittest.skip
-    def test_wip():
+    def test_against_actual_device():
         """
-        Test: WIP.
+        Test the controller works with an actual device.
         """
         # Test parameters
         expected_any_builds_running = True
@@ -167,11 +166,9 @@ class TestController(unittest.TestCase):
         # Execute
         controller.start()
         import time
-        time.sleep(3 * polling_interval)
+        time.sleep(2 * polling_interval)
         controller.stop()
-
-        # Test
-        # ???
+        time.sleep(2 * polling_interval)
 
     def test_no_device_no_write(self):
         """
