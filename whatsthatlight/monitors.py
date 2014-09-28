@@ -19,7 +19,6 @@ Various monitors.
 # System imports
 import logging
 import threading
-import time
 
 
 class DeviceMonitor(object):
@@ -34,6 +33,7 @@ class DeviceMonitor(object):
         :param device: A Device instance.
         :param polling_interval: The polling interval in seconds, as a float.
         """
+        self._logger = logging.getLogger()
         self._device = device
         self._connected = False
         self._running = False
@@ -41,20 +41,26 @@ class DeviceMonitor(object):
         self._added_handler = None
         self._removed_handler = None
         self._polling_interval = polling_interval
+        self._polling_event = threading.Event()
 
     def start(self):
         """
         Start to poll.
         """
+        self._logger.info('Device monitor starting')
         self._thread = threading.Thread(target=self._run)
         self._thread.start()
+        self._logger.info('Device monitor started')
 
     def stop(self):
         """
         Stop polling.
         """
+        self._logger.info('Device monitor stopping')
         self._running = False
+        self._polling_event.set()
         self._thread.join()
+        self._logger.info('Device monitor stopped')
 
     def set_added_handler(self, handler):
         """
@@ -76,9 +82,11 @@ class DeviceMonitor(object):
         """
         Polling thread.
         """
+        self._polling_event.clear()
         self._running = True
         while self._running:
             try:
+                self._logger.debug('Polling for device')
                 self._device.open()
                 could_open = True
                 self._device.close()
@@ -93,7 +101,7 @@ class DeviceMonitor(object):
                 self._connected = True
                 self._added_handler()
             # else:
-            time.sleep(self._polling_interval)
+            self._polling_event.wait(self._polling_interval)
 
 
 class ServerMonitor(object):
@@ -108,8 +116,10 @@ class ServerMonitor(object):
         :param client: A build server client.
         :param polling_interval: The interval, in seconds, between checks.
         """
+        self._logger = logging.getLogger()
         self._client = client
         self._polling_interval = polling_interval
+        self._polling_event = threading.Event()
         self._handler = None
         self._running = False
         self._thread = None
@@ -119,17 +129,22 @@ class ServerMonitor(object):
         """
         Start the monitor.
         """
+        self._logger.info('Server monitor starting')
         self._client.connect()
         self._thread = threading.Thread(target=self._run)
         self._thread.start()
+        self._logger.info('Server monitor started')
 
     def stop(self):
         """
         Stop the monitor.
         """
+        self._logger.info('Server monitor stopping')
+        self._polling_event.set()
         self._running = False
         self._thread.join()
         self._client.disconnect()
+        self._logger.info('Server monitor stopped')
 
     def set_handler(self, handler):
         """
@@ -145,6 +160,7 @@ class ServerMonitor(object):
         """
         Polling thread.
         """
+        self._polling_event.clear()
         self._running = True
         while self._running:
             if self._handler:
@@ -158,5 +174,5 @@ class ServerMonitor(object):
                     self._logger.error(error)
                     self._handler(None, None)
                 finally:
-                    time.sleep(self._polling_interval)
+                    self._polling_event.wait(self._polling_interval)
                 # pylint: enable=broad-except

@@ -38,6 +38,7 @@ class Controller(object):
         self._device = device
         self._device_monitor = device_monitor
         self._server_monitor = server_monitor
+        self._device_connected = False
         self._build_state = (None, None)
 
     def start(self):
@@ -51,13 +52,22 @@ class Controller(object):
             """
             Device added handler.
             """
-            self._logger.info('Device added (vid={vid}, pid={pid})'
-                              .format(vid=self._device.get_vendor_id(),
-                                      pid=self._device.get_product_id()))
+            self._logger.info('Device added (vid=%0#6x, pid=%0#6x)',
+                              self._device.get_vendor_id(),
+                              self._device.get_product_id())
             self._device.open()
             (any_builds_running, any_build_failures) = self._build_state
             self._device.send(any_builds_running, any_build_failures)
+            self._device.close()
+            self._device_connected = True
             event.set()
+
+        def _device_removed_handler():
+            """
+            Device removed handler.
+            """
+            self._logger.info('Device removed')
+            self._device_connected = False
 
         def _server_handler(any_builds_running, any_build_failures):
             """
@@ -70,12 +80,23 @@ class Controller(object):
             self._logger.debug('Build server state: any_builds_running={any_builds_running}, any_build_failures={any_build_failures}'
                                .format(any_builds_running=any_builds_running,
                                        any_build_failures=any_build_failures))
-            if self._device.is_open():
-                self._logger.debug('Device open; setting state')
+            if self._device_connected:
+                # Warning: Abstraction bleeding: There can be only one open handle to the device
+                # at any given time. Because we're using the same device for polling and updating
+                # state, from two different contexts, we need to open the device only when we are
+                # going to write, and immediately close it thereafter. Now, because of the two
+                # polling loops (in the two monitors) there is of course the possibility of a
+                # race condition, where the two loops will coincide: The one loop will open the
+                # device, but before closing, the other loop will also open it. This will cause the
+                # hidapi to blow up.
+                self._logger.debug('Device connected; setting state')
+                self._device.open()
                 self._device.send(any_builds_running, any_build_failures)
+                self._device.close()
 
         # Set handlers
         self._device_monitor.set_added_handler(_device_added_handler)
+        self._device_monitor.set_removed_handler(_device_removed_handler)
         self._server_monitor.set_handler(_server_handler)
 
         # Synchronised start
@@ -88,6 +109,9 @@ class Controller(object):
         """
         Stop the controller and dependencies.
         """
-        self._device.off()
+        if self._device_connected:
+            self._device.open()
+            self._device.off()
+            self._device.close()
         self._server_monitor.stop()
         self._device_monitor.stop()

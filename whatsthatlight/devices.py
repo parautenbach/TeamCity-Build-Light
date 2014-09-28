@@ -135,6 +135,7 @@ class HidApiDevice(BaseDevice):
         """
         Open the device for communication.
         """
+        # TODO: Open lock
         self._device.open(self._vendor_id, self._product_id)
         self._is_open = True
 

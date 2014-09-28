@@ -26,6 +26,7 @@ Tests for the controller.
 """
 
 # System imports
+import importlib
 import logging
 import threading
 import unittest
@@ -119,8 +120,10 @@ class TestController(unittest.TestCase):
         # Execute
         event.clear()
         controller.start()
-        event.wait(polling_interval)
-        controller.stop()
+        try:
+            event.wait(5 * polling_interval)
+        finally:
+            controller.stop()
 
         # Test
         self.assertTrue(event.is_set(), 'Timeout')
@@ -129,6 +132,44 @@ class TestController(unittest.TestCase):
         self.assertEqual(actual_data, expected_data_0)
         actual_data = device_data[1]
         self.assertEqual(actual_data, expected_data_1)
+
+    @staticmethod
+    @unittest.skip
+    def test_wip():
+        """
+        Test: WIP.
+        """
+        # Test parameters
+        expected_any_builds_running = True
+        expected_any_build_failures = False
+        polling_interval = 1
+        vendor_id = 0x27b8
+        product_id = 0x01ed
+        hid_module = importlib.import_module('hid')
+
+        # Mocks
+        client = mock(clients.BaseClient)
+        when(client).any_builds_running().thenReturn(expected_any_builds_running)
+        when(client).any_build_failures().thenReturn(expected_any_build_failures)
+
+        # Setup
+        device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=hid_module)
+        device_monitor = monitors.DeviceMonitor(device=device,
+                                                polling_interval=1 * polling_interval)
+        server_monitor = monitors.ServerMonitor(client=client,
+                                                polling_interval=5 * polling_interval)
+        controller = controllers.Controller(device=device,
+                                            device_monitor=device_monitor,
+                                            server_monitor=server_monitor)
+
+        # Execute
+        controller.start()
+        import time
+        time.sleep(3 * polling_interval)
+        controller.stop()
+
+        # Test
+        # ???
 
     def test_no_device_no_write(self):
         """
