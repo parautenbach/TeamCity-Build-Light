@@ -56,7 +56,7 @@ class Controller(object):
                                       pid=self._device.get_product_id()))
             self._device.open()
             (any_builds_running, any_build_failures) = self._build_state
-            self._device.write(any_builds_running, any_build_failures)
+            self._device.send(any_builds_running, any_build_failures)
             event.set()
 
         def _server_handler(any_builds_running, any_build_failures):
@@ -72,7 +72,7 @@ class Controller(object):
                                        any_build_failures=any_build_failures))
             if self._device.is_open():
                 self._logger.debug('Device open; setting state')
-                self._device.write(any_builds_running, any_build_failures)
+                self._device.send(any_builds_running, any_build_failures)
 
         # Set handlers
         self._device_monitor.set_added_handler(_device_added_handler)

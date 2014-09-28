@@ -68,9 +68,9 @@ class BaseDevice(object):
         """
 
     @abc.abstractmethod  # pragma: no cover
-    def write(self, any_builds_running, any_build_failures):
+    def send(self, any_builds_running, any_build_failures):
         """
-        Write raw data.
+        Sends build information to the device.
 
         :param any_builds_running: True if any builds running. None if unknown or undefined.
         :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
@@ -81,6 +81,8 @@ class BaseDevice(object):
         """
         Close the device for communication.
         """
+
+    # TODO: Off
 
 
 class HidApiDevice(BaseDevice):
@@ -163,9 +165,9 @@ class HidApiDevice(BaseDevice):
         (red, green, blue) = colour
         return [0x01, 0x63, red, green, blue, self._th, self._tl, HidApiDevice._LED_NUMBER]
 
-    def write(self, any_builds_running, any_build_failures):
+    def send(self, any_builds_running, any_build_failures):
         """
-        Write raw data.
+        Sends build information to the device.
 
         :param any_builds_running: True if any builds running. None if unknown or undefined.
         :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.

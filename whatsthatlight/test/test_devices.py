@@ -64,22 +64,22 @@ class TestHidApiDevice(unittest.TestCase):
 
         # Unknown (blue)
         print('Unknown => Blue')
-        device.write(any_builds_running=None, any_build_failures=None)
+        device.send(any_builds_running=None, any_build_failures=None)
         time.sleep(wait_time)
 
         # Failure (red)
         print('Failure => Red')
-        device.write(any_builds_running=False, any_build_failures=True)
+        device.send(any_builds_running=False, any_build_failures=True)
         time.sleep(wait_time)
 
         # Running (yellow)
         print('Running => Yellow')
-        device.write(any_builds_running=True, any_build_failures=False)
+        device.send(any_builds_running=True, any_build_failures=False)
         time.sleep(wait_time)
 
         # Success (green)
         print('Success => Green')
-        device.write(any_builds_running=False, any_build_failures=False)
+        device.send(any_builds_running=False, any_build_failures=False)
         time.sleep(wait_time)
 
         # Close
@@ -103,7 +103,7 @@ class TestHidApiDevice(unittest.TestCase):
 
         # Test
         device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
-        self.assertRaises(IOError, device.write, any_builds_running=None, any_build_failures=None)
+        self.assertRaises(IOError, device.send, any_builds_running=None, any_build_failures=None)
 
 
 if __name__ == '__main__':

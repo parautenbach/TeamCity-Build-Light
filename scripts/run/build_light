@@ -37,7 +37,7 @@ _config_path = None
 _logger = None
 _models = None
 _decision_model = None
-_service = None
+_controller = None
 _event = threading.Event()
 _is_running = False
 
@@ -53,6 +53,8 @@ except ImportError:
     exit(1)
 
 from whatsthatlight import config_utils
+from whatsthatlight import controllers
+from whatsthatlight import monitors
 
 
 # noinspection PyUnusedLocal
@@ -63,10 +65,10 @@ def _stop_handler(_signum, _frame):
     :param _signum: Ignored.
     :param _frame: Ignored.
     """
-    global _logger, _service, _event, _is_running
+    global _logger, _controller, _event, _is_running
     _logger.info('Shutdown requested')
     if _is_running:
-        _service.stop()
+        _controller.stop()
         _is_running = False
     _event.set()
 
@@ -79,7 +81,7 @@ def _reload_config_handler(_signum, _frame):
     :param _signum: Ignored.
     :param _frame: Ignored.
     """
-    global _config_path, _logger, _models, _decision_model, _service
+    global _config_path, _logger, _models, _decision_model, _controller
     _logger.info('Reload requested')
     _logger.info('Configuration file location: {0}'.format(_config_path))
     try:
@@ -88,7 +90,7 @@ def _reload_config_handler(_signum, _frame):
         _logger.info('Reload failed')
         _logger.error(exception)
         return
-    _service.reload()
+    _controller.reload()
     _logger.info('Reloaded')
 
 
@@ -107,7 +109,7 @@ def main():
     Main application.
     """
     # We need these -- everywhere -- and we need them as e.g. signal handlers can't take these as arguments.
-    global _logger, _config_path, _models, _decision_model, _service, _event, _is_running
+    global _logger, _config_path, _models, _decision_model, _controller, _event, _is_running
 
     # Configuration
     parser = config_utils.create_argument_parser(application_name=_APPLICATION_NAME,
@@ -123,15 +125,22 @@ def main():
 
     # Logging
     _logger = config_utils.create_logger(_config_path)
-    _logger.info('Initialising system')
+    _logger.info('Initialising')
     _logger.info('Configuration file location: {0}'.format(_config_path))
     _logger.info('Process running with PID {0}'.format(os.getpid()))
 
     # Assemble
+    device = config_utils.load_device(config_parser=config_parser)
+    device_monitor = monitors.DeviceMonitor(device=device)
+    server_client = config_utils.load_client(config_parser=config_parser)
+    server_monitor = monitors.ServerMonitor(client=server_client)
+    _controller = controllers.Controller(device=device,
+                                         device_monitor=device_monitor,
+                                         server_monitor=server_monitor)
 
     # Start
     _register_signal_handlers()
-    _service.start()
+    _controller.start()
 
     # We need to keep this process alive
     _event.clear()

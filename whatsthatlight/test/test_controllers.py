@@ -88,9 +88,9 @@ class TestController(unittest.TestCase):
         event = threading.Event()
 
         # Callback closure
-        def write(any_builds_running, any_build_failures):
+        def send(any_builds_running, any_build_failures):
             """
-            Write raw data.
+            Sends build information to the device.
 
             :param any_builds_running: True if any builds running. None if unknown or undefined.
             :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
@@ -101,7 +101,7 @@ class TestController(unittest.TestCase):
 
         # Mocks
         device = mock(devices.BaseDevice)
-        device.write = write
+        device.send = send
         when(device).is_open().thenReturn(True)
         client = mock(clients.BaseClient)
         when(client).any_builds_running().thenReturn(expected_any_builds_running_1)
