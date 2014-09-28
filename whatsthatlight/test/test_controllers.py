@@ -136,6 +136,7 @@ class TestController(unittest.TestCase):
         self.assertEqual(actual_data, expected_data_1)
 
     @staticmethod
+    @unittest.skipIf(True, 'Manual test')
     def test_against_actual_device():
         """
         Test the controller works with an actual device.

@@ -42,6 +42,7 @@ class TestHidApiDevice(unittest.TestCase):
     HID API device tests.
     """
 
+    @unittest.skipIf(True, 'Manual test')
     def test_basic_sequence(self):
         """
         A basic open, write and close sequence against an actual device.
