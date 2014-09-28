@@ -28,7 +28,11 @@ Tests for the controller.
 # System imports
 import importlib
 import logging
+import signal
+import subprocess
+import sys
 import threading
+import time
 import unittest
 
 # Third-party imports
@@ -72,6 +76,34 @@ class TestController(unittest.TestCase):
         # Execute
         controller.start()
         controller.stop()
+
+    @staticmethod
+    @unittest.skipIf(True, 'Manual test')
+    def test_console():
+        """
+        Test the console script.
+        """
+        script = './scripts/run/build_light_dev'
+        max_number_of_log_lines = 20
+        log_substring_condition = 'Controller started'
+        process = subprocess.Popen([script],
+                                   cwd='..',
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        print('Subprocess ID: {0}'.format(process.pid))
+        sys.stdout.flush()
+        number_of_lines = 0
+        while number_of_lines < max_number_of_log_lines:
+            line = process.stdout.readline().strip()
+            print('Scanning for started log message: {0}'.format(line))
+            sys.stdout.flush()
+            if log_substring_condition in line:
+                print('Found started log message')
+                sys.stdout.flush()
+                break
+            number_of_lines += 1
+            time.sleep(0.01)
+        process.send_signal(signal.SIGTERM)
 
     def test_initial_state_and_device_added(self):
         """
@@ -166,7 +198,6 @@ class TestController(unittest.TestCase):
 
         # Execute
         controller.start()
-        import time
         time.sleep(2 * polling_interval)
         controller.stop()
         time.sleep(2 * polling_interval)

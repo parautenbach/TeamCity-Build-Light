@@ -116,6 +116,73 @@ class TestHidApiDevice(unittest.TestCase):
         device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
         self.assertRaises(IOError, device.send, any_builds_running=None, any_build_failures=None)
 
+    def test_open_close(self):
+        """
+        Test opening and closing the device.
+        """
+        # Test parameters
+        vendor_id = 0
+        product_id = 0
+
+        # Mocks
+        hidapi = importlib.import_module('hid')
+        mock_device = mock(hidapi.device)
+        when(mock_device).write(any()).thenReturn(8)
+        mock_hidapi = mock(hidapi)
+        when(mock_hidapi).device().thenReturn(mock_device)
+
+        # Test
+        device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
+        device.open()
+        self.assertTrue(device.is_open())
+        device.close()
+        self.assertFalse(device.is_open())
+
+    def test_send_and_off(self):
+        """
+        Test sending information to the device.
+        """
+        # Test parameters
+        expected_data = [[1, 99, 0, 200, 255, 0, 100, 0],
+                         [1, 99, 0, 255, 0, 0, 100, 0],
+                         [1, 99, 230, 0, 0, 0, 100, 0],
+                         [1, 99, 200, 120, 0, 0, 100, 0],
+                         [1, 99, 200, 120, 0, 0, 100, 0],
+                         [1, 99, 0, 0, 0, 0, 100, 0]]
+        vendor_id = 0
+        product_id = 0
+
+        actual_data = []
+
+        def write(data):
+            """
+            Close for capturing data written to the device.
+
+            :param data: The binary data.
+            :return: The number of bytes written.
+            """
+            actual_data.append(data)
+            return len(data)
+
+        # Mocks
+        hidapi = importlib.import_module('hid')
+        mock_device = mock(hidapi.device)
+        mock_device.write = write
+        mock_hidapi = mock(hidapi)
+        when(mock_hidapi).device().thenReturn(mock_device)
+
+        # Execute
+        device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
+        device.send(None, None)
+        device.send(False, False)
+        device.send(False, True)
+        device.send(True, False)
+        device.send(True, True)
+        device.off()
+
+        # Test
+        self.assertListEqual(actual_data, expected_data)
+
     # @unittest.skip
     # def test_(self):
     #     """

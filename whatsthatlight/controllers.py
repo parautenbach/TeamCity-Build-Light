@@ -45,7 +45,7 @@ class Controller(object):
         """
         Start the controller and dependencies.
         """
-
+        self._logger.info('Controller starting')
         event = threading.Event()
 
         def _device_added_handler():
@@ -112,14 +112,17 @@ class Controller(object):
         self._device_monitor.start()
         event.wait(1)
         self._server_monitor.start()
+        self._logger.info('Controller started')
 
     def stop(self):
         """
         Stop the controller and dependencies.
         """
+        self._logger.info('Controller stopping')
         if self._device_connected:
             self._device.open()
             self._device.off()
             self._device.close()
         self._server_monitor.stop()
         self._device_monitor.stop()
+        self._logger.info('Controller stopped')
