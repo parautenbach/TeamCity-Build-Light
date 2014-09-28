@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 # Copyright 2013 Pieter Rautenbach
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -195,7 +196,7 @@ class TestTeamCityClient(unittest.TestCase):
                         }}
                     ],
                 "count": 1,
-                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:376)"
             }}
             """.format(username=username)
         changes_response = (200, {}, changes_body)
@@ -639,6 +640,309 @@ class TestTeamCityClient(unittest.TestCase):
         # Test
         self.assertEqual(3, len(requests))
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
+
+    def test_any_build_failures_positive(self):
+        """
+        Test for when there is a build in a failed state.
+        """
+        # Expectations
+        expected_any_build_failures = True
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+
+        # Resources
+        build_types_resource = '/httpAuth/app/rest/buildTypes'
+        build_resource_a = '/httpAuth/app/rest/builds/id:378'
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # A list of builds
+        build_types_body = """
+                           {
+                               "count": 1,
+                               "buildType": [
+                                               {"id": "TestProject_BuildConfigA"}
+                                           ]
+                           }
+                           """
+        build_types_response = (200, {}, build_types_body)
+        build_type_resource = '/httpAuth/app/rest/builds/'
+        build_type_body_status_failure = """
+            {
+                "count": 1,
+                "build":
+                    [
+                        {
+                            "href": "/httpAuth/app/rest/builds/id:378"
+                        }
+                    ]
+            }"""
+        build_types_response_a = (200, {}, build_type_body_status_failure)
+
+        # A failing build
+        build_a = """
+            {{
+                    "id": 378,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "FAILURE",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "{username}"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:378)"
+                        }}
+            }}
+        """.format(username=username, changes_resource=changes_resource)
+        build_response_a = (200, {}, build_a)
+
+        # Changes
+        changes_body = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:378)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Assembly responses
+        responses = {
+            expected_verb: {
+                build_types_resource: [build_types_response],
+                build_type_resource: [build_types_response_a],
+                build_resource_a: [build_response_a],
+                changes_resource: [changes_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_build_failures = client.any_build_failures()
+            event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(4, len(requests))
+        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
+
+    def test_any_build_failures_positive_multiple_failed_builds(self):
+        """
+        Test for when there are builds in a failed state, but only the last one is due to the user.
+        """
+        # Expectations
+        expected_any_build_failures = True
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+
+        # Resources
+        build_types_resource = '/httpAuth/app/rest/buildTypes'
+        build_resource_a = '/httpAuth/app/rest/builds/id:378'
+        build_resource_b = '/httpAuth/app/rest/builds/id:379'
+        build_resource_c = '/httpAuth/app/rest/builds/id:380'
+        build_resource_d = '/httpAuth/app/rest/builds/id:381'
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # A list of builds
+        build_types_body = """
+                           {
+                               "count": 2,
+                               "buildType": [
+                                               {"id": "TestProject_BuildConfigA"},
+                                               {"id": "TestProject_BuildConfigB"}
+                                           ]
+                           }
+                           """
+        build_types_response = (200, {}, build_types_body)
+        build_type_resource = '/httpAuth/app/rest/builds/'
+        build_type_body_status_failure_a = """
+            {
+                "count": 2,
+                "build":
+                    [
+                        {
+                            "href": "/httpAuth/app/rest/builds/id:378"
+                        },
+                        {
+                            "href": "/httpAuth/app/rest/builds/id:379"
+                        }
+                    ]
+            }"""
+        build_types_response_a = (200, {}, build_type_body_status_failure_a)
+        build_type_body_status_failure_b = """
+            {
+                "count": 2,
+                "build":
+                    [
+                        {
+                            "href": "/httpAuth/app/rest/builds/id:380"
+                        },
+                        {
+                            "href": "/httpAuth/app/rest/builds/id:381"
+                        }
+                    ]
+            }"""
+        build_types_response_b = (200, {}, build_type_body_status_failure_b)
+
+        # Failing builds
+        build = """
+            {{
+                    "id": 378,
+                    "state": "running",
+                    "buildTypeId": "TestProject_BuildConfigA",
+                    "status": "FAILURE",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "foo"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:378)"
+                        }}
+            }}
+        """.format(username=username, changes_resource=changes_resource)
+        build_response = (200, {}, build)
+
+        # Changes
+        changes_body_other = """
+            {
+                "change":
+                    [
+                        {
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "foo"
+                        }
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:378)"
+            }
+            """
+        changes_response_other = (200, {}, changes_body_other)
+        changes_body = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:381)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Assembly responses
+        responses = {
+            expected_verb: {
+                build_types_resource: [build_types_response],
+                build_type_resource: [build_types_response_a, build_types_response_b],
+                build_resource_a: [build_response],
+                build_resource_b: [build_response],
+                build_resource_c: [build_response],
+                build_resource_d: [build_response],
+                changes_resource: [changes_response_other,
+                                   changes_response_other,
+                                   changes_response_other,
+                                   changes_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_build_failures = client.any_build_failures()
+            event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(11, len(requests))
+        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
 
     def test_any_build_failures_negative(self):
         """

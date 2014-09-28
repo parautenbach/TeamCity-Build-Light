@@ -128,6 +128,7 @@ class TeamCityClient(BaseClient):
 
         :return: A list of builds.
         """
+        builds = []
         build_types = self._get_resource(self._BUILD_TYPES_RESOURCE)
         if self._COUNT_ATTRIBUTE in build_types:
             for build_type in build_types[self._BUILD_TYPE_ATTRIBUTE]:
@@ -135,8 +136,8 @@ class TeamCityClient(BaseClient):
                 build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(build_type_id=build_type_id)
                 failed_builds = self._get_resource(build_type_resource)
                 if self._COUNT_ATTRIBUTE in failed_builds:
-                    return failed_builds[self._BUILD_ATTRIBUTE]
-        return []
+                    builds.extend(failed_builds[self._BUILD_ATTRIBUTE])
+        return builds
 
     def _is_triggered_by_user(self, build):
         """
@@ -172,14 +173,13 @@ class TeamCityClient(BaseClient):
         """
         return self._user_is_contributor_to_build(build) or self._is_triggered_by_user(build)
 
-    def _any_builds_helper(self, any_callable):
+    def _any_builds_helper(self, builds):
         """
         Iterate over builds returned by the callable method and return True if any build is affected by the user.
 
-        :param any_callable: A callable of arity 0.
+        :param builds: A list of builds.
         :return: True if a build is affected by the user.
         """
-        builds = any_callable()
         for build in builds:
             build_details = self._get_resource(build[self._HREF_ATTRIBUTE])
             if self._is_affected_by_user(build_details):
@@ -192,7 +192,7 @@ class TeamCityClient(BaseClient):
 
         :return: True if there are one or more builds running.
         """
-        return self._any_builds_helper(self._get_running_builds)
+        return self._any_builds_helper(self._get_running_builds())
 
     def any_build_failures(self):
         """
@@ -200,4 +200,4 @@ class TeamCityClient(BaseClient):
 
         :return: True if there are one or more builds have failed or are failing.
         """
-        return self._any_builds_helper(self._get_failed_builds)
+        return self._any_builds_helper(self._get_failed_builds())
