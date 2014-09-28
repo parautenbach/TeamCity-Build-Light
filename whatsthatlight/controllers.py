@@ -88,5 +88,6 @@ class Controller(object):
         """
         Stop the controller and dependencies.
         """
+        self._device.off()
         self._server_monitor.stop()
         self._device_monitor.stop()

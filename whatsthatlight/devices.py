@@ -77,6 +77,12 @@ class BaseDevice(object):
         """
 
     @abc.abstractmethod  # pragma: no cover
+    def off(self):
+        """
+        Switch off the device.
+        """
+
+    @abc.abstractmethod  # pragma: no cover
     def close(self):
         """
         Close the device for communication.
@@ -94,6 +100,7 @@ class HidApiDevice(BaseDevice):
     _DEFAULT_SUCCESS_COLOUR = (0, 255, 0)
     _DEFAULT_UNDEFINED_COLOUR = (0, 200, 255)
     _DEFAULT_RUNNING_COLOUR = (200, 120, 0)
+    _OFF_COLOUR = (0, 0, 0)
     _LED_NUMBER = 0
     _FADE_MILLIS = 100
 
@@ -173,9 +180,24 @@ class HidApiDevice(BaseDevice):
         :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
         """
         data = self._encode(any_builds_running, any_build_failures)
+        self._write(data)
+
+    def _write(self, data):
+        """
+        Internal write.
+
+        :param data: Binary data.
+        """
         nr_of_bytes = self._device.write(data)
         if nr_of_bytes != len(data):
             raise IOError('Could not write all data: {0}/{1} bytes'.format(nr_of_bytes, len(data)))
+
+    def off(self):
+        """
+        Switch off the device.
+        """
+        data = self._create_packet(self._OFF_COLOUR)
+        self._write(data)
 
     def close(self):
         """

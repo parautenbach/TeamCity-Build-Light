@@ -50,7 +50,7 @@ class TestHidApiDevice(unittest.TestCase):
         expected_vendor_id = 0x27b8
         expected_product_id = 0x01ed
         # We assume fade millis is 100ms, so we'll wait 1s
-        wait_time = 1
+        wait_time = 2
         hidapi = importlib.import_module('hid')
 
         # Create
@@ -61,6 +61,11 @@ class TestHidApiDevice(unittest.TestCase):
         # Open
         device.open()
         self.assertTrue(device.is_open())
+
+        # Off (none)
+        print('Off => None')
+        device.off()
+        time.sleep(wait_time)
 
         # Unknown (blue)
         print('Unknown => Blue')
@@ -80,6 +85,11 @@ class TestHidApiDevice(unittest.TestCase):
         # Success (green)
         print('Success => Green')
         device.send(any_builds_running=False, any_build_failures=False)
+        time.sleep(wait_time)
+
+        # Off (none)
+        print('Off => None')
+        device.off()
         time.sleep(wait_time)
 
         # Close
