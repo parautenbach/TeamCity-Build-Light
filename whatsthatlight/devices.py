@@ -135,7 +135,6 @@ class HidApiDevice(BaseDevice):
         """
         Open the device for communication.
         """
-        # TODO: Open lock
         self._device.open(self._vendor_id, self._product_id)
         self._is_open = True
 
@@ -204,5 +203,6 @@ class HidApiDevice(BaseDevice):
         """
         Close the device for communication.
         """
-        self._device.close()
+        if self.is_open():
+            self._device.close()
         self._is_open = False

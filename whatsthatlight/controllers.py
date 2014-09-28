@@ -89,6 +89,7 @@ class Controller(object):
                 # race condition, where the two loops will coincide: The one loop will open the
                 # device, but before closing, the other loop will also open it. This will cause the
                 # hidapi to blow up.
+                # TODO: Fix possible race condition
                 self._logger.debug('Device connected; setting state')
                 self._device.open()
                 self._device.send(any_builds_running, any_build_failures)

@@ -92,7 +92,8 @@ class TestHidApiDevice(unittest.TestCase):
         device.off()
         time.sleep(wait_time)
 
-        # Close
+        # Close (twice, without problems)
+        device.close()
         device.close()
         self.assertFalse(device.is_open())
 
@@ -114,6 +115,59 @@ class TestHidApiDevice(unittest.TestCase):
         # Test
         device = devices.HidApiDevice(vendor_id=vendor_id, product_id=product_id, hidapi=mock_hidapi)
         self.assertRaises(IOError, device.send, any_builds_running=None, any_build_failures=None)
+
+    # @unittest.skip
+    # def test_(self):
+    #     """
+    #     Test
+    #     """
+    #     # Test parameters
+    #     expected_vendor_id = 0x27b8
+    #     expected_product_id = 0x01ed
+    #     # We assume fade millis is 100ms, so we'll wait 1s
+    #     wait_time = 1
+    #     hidapi = importlib.import_module('hid')
+    #
+    #     # Create
+    #     device = devices.HidApiDevice(vendor_id=expected_vendor_id, product_id=expected_product_id, hidapi=hidapi)
+    #
+    #     errors = []
+    #
+    #     def _run(any_builds_running, any_build_failures):
+    #         """
+    #         :param any_builds_running:
+    #         :param any_build_failures:
+    #         :return:
+    #         """
+    #         print(any_builds_running, any_build_failures)
+    #         # pylint: disable=broad-except
+    #         try:
+    #             device.open()
+    #             if device.is_open():
+    #                 time.sleep(wait_time)
+    #                 # print(any_builds_running, any_build_failures)
+    #                 device.send(any_builds_running, any_build_failures)
+    #                 print('wait1')
+    #                 time.sleep(wait_time)
+    #                 print('wait2')
+    #                 device.close()
+    #         except Exception, e:
+    #             errors.append(e)
+    #         # pylint: enable=broad-except
+    #
+    #     thread1 = threading.Thread(target=_run, args=(False, True))
+    #     thread2 = threading.Thread(target=_run, args=(False, False))
+    #
+    #     thread1.start()
+    #     thread2.start()
+    #
+    #     # Stop
+    #     thread1.join()
+    #     thread2.join()
+    #     # And another close must no matter
+    #     device.close()
+    #     self.assertFalse(device.is_open())
+    #     self.assertEqual(0, len(errors), errors)
 
 
 if __name__ == '__main__':
