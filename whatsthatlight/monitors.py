@@ -48,7 +48,7 @@ class DeviceMonitor(object):
         Start to poll.
         """
         self._logger.info('Device monitor starting')
-        self._thread = threading.Thread(target=self._run)
+        self._thread = threading.Thread(target=self._run, name=self.__class__.__name__)
         self._thread.start()
         self._logger.info('Device monitor started')
 
@@ -132,7 +132,7 @@ class ServerMonitor(object):
         """
         self._logger.info('Server monitor starting')
         self._client.connect()
-        self._thread = threading.Thread(target=self._run)
+        self._thread = threading.Thread(target=self._run, name=self.__class__.__name__)
         self._thread.start()
         self._logger.info('Server monitor started')
 
