@@ -61,7 +61,7 @@ setup(name='whatsthatlight',
                    'Operating System :: POSIX :: Linux',
                    'Programming Language :: Python :: 2.7',
                    'Topic :: Software Development :: Build Tools'],
-      keywords='continuous integration feedback device build light teamcity',
+      keywords='continuous integration feedback device build server light teamcity',
       url='http://www.whatsthatlight.com/',
       author='Pieter Rautenbach',
       author_email='parautenbach@gmail.com',
@@ -74,5 +74,3 @@ setup(name='whatsthatlight',
       install_requires=requirements,
       include_package_data=True,
       zip_safe=False)
-
-# TODO: Post-install stuff

@@ -88,8 +88,6 @@ class BaseDevice(object):
         Close the device for communication.
         """
 
-    # TODO: Off
-
 
 class HidApiDevice(BaseDevice):
     """
