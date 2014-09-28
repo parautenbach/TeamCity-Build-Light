@@ -71,9 +71,11 @@ class TestTeamCityClient(unittest.TestCase):
         username = 'admin'
         password = 'admin'
         resource = '/httpAuth/app/rest/builds/'
-        body = ('{{"href": "{resource}?locator=user:{username},personal:false,canceled:false,running:true,count:1"}}'
-                .format(resource=resource,
-                        username=username))
+        body = """
+                   {{
+                       "href": "{resource}?locator=personal:false,canceled:false,running:true"
+                   }}
+               """.format(resource=resource)
         response = (200, {}, body)
         responses = {
             expected_verb: {
@@ -136,14 +138,74 @@ class TestTeamCityClient(unittest.TestCase):
         server_url = 'http://{0}:{1}/'.format(host, port)
         username = 'admin'
         password = 'admin'
-        resource = '/httpAuth/app/rest/builds/'
-        body = ('{{"href": "{resource}?locator=user:{username},personal:false,canceled:false,running:true,count:1", "count": 1}}'
-                .format(resource=resource,
-                        username=username))
-        response = (200, {}, body)
+
+        # Resources
+        builds_resource = '/httpAuth/app/rest/builds/'
+        build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # List of running builds
+        running_builds_body = """
+            {{
+                "count": 1,
+                "build":
+                    [
+                        {{
+                            "href": "{build_resource}",
+                            "buildTypeId": "Test_TestFoo",
+                            "id": 376
+                        }}
+                    ]
+            }}""".format(build_resource=build_resource)
+        running_builds_response = (200, {}, running_builds_body)
+
+        # The running build
+        running_build_body = """
+            {{
+                    "id": 376,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "{username}"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:376)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response = (200, {}, running_build_body)
+
+        # Changes for build
+        changes_body = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Assemble responses
         responses = {
             expected_verb: {
-                resource: [response]
+                builds_resource: [running_builds_response],
+                build_resource: [running_build_response],
+                changes_resource: [changes_response]
             }
         }
         event = threading.Event()
@@ -179,18 +241,18 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(1, len(requests))
-        (actual_verb, _, actual_headers) = requests[0]
-        self.assertEqual(actual_verb, expected_verb)
-        self.assertDictContainsSubset(expected_headers_subset, actual_headers)
+        self.assertEqual(3, len(requests))
+        for (actual_verb, _, actual_headers) in requests:
+            self.assertEqual(actual_verb, expected_verb)
+            self.assertDictContainsSubset(expected_headers_subset, actual_headers)
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
 
-    def test_any_build_failures_positive_with_skip(self):
+    def test_any_builds_running_positive_multiple_builds(self):
         """
-        Test that iterating over builds stop as soon as the first failed build is found.
+        Test for when there are multiple builds running.
         """
         # Expectations
-        expected_any_build_failures = True
+        expected_any_builds_running = True
         expected_verb = 'GET'
 
         # Test parameters
@@ -199,36 +261,111 @@ class TestTeamCityClient(unittest.TestCase):
         server_url = 'http://{0}:{1}/'.format(host, port)
         username = 'admin'
         password = 'admin'
-        build_types_resource = '/httpAuth/app/rest/buildTypes'
-        build_types_body = """
-                           {
-                               "count": 5,
-                               "buildType": [
-                                               {"id": "TestProject_BuildConfigA"},
-                                               {"id": "TestProject_BuildConfigB"},
-                                               {"id": "TestProject_BuildConfigC"},
-                                               {"id": "TestProject_BuildConfigD"},
-                                               {"id": "TestProject_BuildConfigE"}
-                                           ]
-                           }
-                           """
-        build_types_response = (200, {}, build_types_body)
-        build_type_resource = '/httpAuth/app/rest/builds/'
-        build_type_body_status_success = '{}'
-        build_type_body_status_failure = '{"count": 1}'
-        build_types_response_a = (200, {}, build_type_body_status_success)
-        build_types_response_b = (200, {}, build_type_body_status_success)
-        build_types_response_c = (200, {}, build_type_body_status_success)
-        build_types_response_d = (200, {}, build_type_body_status_failure)
-        build_types_response_e = (200, {}, build_type_body_status_success)
+
+        # Resources
+        builds_resource = '/httpAuth/app/rest/builds/'
+        build_resource1 = '{builds_resource}id:376'.format(builds_resource=builds_resource)
+        build_resource2 = '{builds_resource}id:377'.format(builds_resource=builds_resource)
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # List of running builds
+        running_builds_body = """
+            {{
+                "count": 2,
+                "build":
+                    [
+                        {{
+                            "href": "{build_resource1}",
+                            "buildTypeId": "Test_TestFoo",
+                            "id": 376
+                        }},
+                        {{
+                            "href": "{build_resource2}",
+                            "buildTypeId": "Test_TestBar",
+                            "id": 377
+                        }}
+                    ]
+            }}""".format(build_resource1=build_resource1,
+                         build_resource2=build_resource2)
+        running_builds_response = (200, {}, running_builds_body)
+
+        # The running builds
+        running_build_body1 = """
+            {{
+                    "id": 376,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "schedule"
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:376)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response1 = (200, {}, running_build_body1)
+        running_build_body2 = """
+            {{
+                    "id": 377,
+                    "state": "running",
+                    "buildTypeId": "Test_TestBar",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "schedule"
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:377)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response2 = (200, {}, running_build_body2)
+
+        # Changes for build
+        changes_body1 = """
+            {
+                "change":
+                    [
+                        {
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "foo"
+                        }
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+            }
+            """
+        changes_response1 = (200, {}, changes_body1)
+        changes_body2 = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+            }}
+            """.format(username=username)
+        changes_response2 = (200, {}, changes_body2)
+
+        # Assemble responses
         responses = {
             expected_verb: {
-                build_types_resource: [build_types_response],
-                build_type_resource: [build_types_response_a,
-                                      build_types_response_b,
-                                      build_types_response_c,
-                                      build_types_response_d,
-                                      build_types_response_e]
+                builds_resource: [running_builds_response],
+                build_resource1: [running_build_response1],
+                build_resource2: [running_build_response2],
+                changes_resource: [changes_response1, changes_response2]
             }
         }
         event = threading.Event()
@@ -257,16 +394,251 @@ class TestTeamCityClient(unittest.TestCase):
             server.start()
             client.connect()
             event.clear()
-            actual_any_build_failures = client.any_build_failures()
+            actual_any_builds_running = client.any_builds_running()
             event.wait()
         finally:
             client.disconnect()
             server.stop()
 
         # Test
-        # 1 to get the list of build types, and 4 more checking builds, but the last (the 5th) gets skipped
         self.assertEqual(5, len(requests))
-        self.assertEqual(actual_any_build_failures, expected_any_build_failures)
+        self.assertEqual(actual_any_builds_running, expected_any_builds_running)
+
+    def test_any_builds_running_positive_multiple_contributors(self):
+        """
+        Test for when there are builds with multiple contributors running.
+        """
+        # Expectations
+        expected_any_builds_running = True
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+
+        # Resources
+        builds_resource = '/httpAuth/app/rest/builds/'
+        build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # List of running builds
+        running_builds_body = """
+            {{
+                "count": 1,
+                "build":
+                    [
+                        {{
+                            "href": "{build_resource}",
+                            "buildTypeId": "Test_TestFoo",
+                            "id": 376
+                        }}
+                    ]
+            }}""".format(build_resource=build_resource)
+        running_builds_response = (200, {}, running_builds_body)
+
+        # The running build
+        running_build_body = """
+            {{
+                    "id": 376,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "{username}"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:376)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response = (200, {}, running_build_body)
+
+        # Changes for build
+        changes_body = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "foo"
+                        }},
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Assemble responses
+        responses = {
+            expected_verb: {
+                builds_resource: [running_builds_response],
+                build_resource: [running_build_response],
+                changes_resource: [changes_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_builds_running = client.any_builds_running()
+            event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(3, len(requests))
+        self.assertEqual(actual_any_builds_running, expected_any_builds_running)
+
+    def test_any_builds_running_positive_triggered_by(self):
+        """
+        Test for when there are builds running where the user triggered it.
+        """
+        # Expectations
+        expected_any_builds_running = True
+        expected_verb = 'GET'
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+
+        # Resources
+        builds_resource = '/httpAuth/app/rest/builds/'
+        build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
+        changes_resource = '/httpAuth/app/rest/changes'
+
+        # List of running builds
+        running_builds_body = """
+            {{
+                "count": 1,
+                "build":
+                    [
+                        {{
+                            "href": "{build_resource}",
+                            "buildTypeId": "Test_TestFoo",
+                            "id": 376
+                        }}
+                    ]
+            }}""".format(build_resource=build_resource)
+        running_builds_response = (200, {}, running_builds_body)
+
+        # The running build
+        running_build_body = """
+            {{
+                    "id": 376,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "{username}"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:376)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response = (200, {}, running_build_body)
+
+        # Changes for build
+        changes_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:367)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Assemble responses
+        responses = {
+            expected_verb: {
+                builds_resource: [running_builds_response],
+                build_resource: [running_build_response],
+                changes_resource: [changes_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_builds_running = client.any_builds_running()
+            event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(3, len(requests))
+        self.assertEqual(actual_any_builds_running, expected_any_builds_running)
 
     def test_any_build_failures_negative(self):
         """

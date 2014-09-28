@@ -81,13 +81,110 @@ class TeamCityClient(BaseClient):
     A TeamCity API client.
     """
 
+    # Attributes
     _COUNT_ATTRIBUTE = 'count'
+    _HREF_ATTRIBUTE = 'href'
     _BUILD_TYPE_ATTRIBUTE = 'buildType'
+    _BUILD_ATTRIBUTE = 'build'
     _ID_ATTRIBUTE = 'id'
-    _RUNNING_BUILDS_RESOURCE_TEMPLATE = '/httpAuth/app/rest/builds/?locator=user:{username},personal:false,canceled:false,running:true,count:1'
+    _TRIGGERED_ATTRIBUTE = 'triggered'
+    _TYPE_ATTRIBUTE = 'type'
+    _TYPE_USER = 'user'
+    _USER_ATTRIBUTE = 'user'
+    _USERNAME_ATTRIBUTE = 'username'
+    _CHANGES_ATTRIBUTE = 'changes'
+    _CHANGE_ATTRIBUTE = 'change'
+
+    # Resources
+    _RUNNING_BUILDS_RESOURCE = '/httpAuth/app/rest/builds/?locator=personal:false,canceled:false,running:true'
     _BUILD_TYPES_RESOURCE = '/httpAuth/app/rest/buildTypes'
-    _BUILD_TYPE_RESOURCE_TEMPLATE = ('/httpAuth/app/rest/builds/?locator=buildType:{build_type_id},status:FAILURE,user:{username},personal:false,'
-                                     'canceled:false,running:any,count:1,sinceBuild:status:SUCCESS')
+    _BUILD_TYPE_RESOURCE_TEMPLATE = ('/httpAuth/app/rest/builds/?locator=buildType:{build_type_id},status:FAILURE,personal:false,'
+                                     'canceled:false,running:any,sinceBuild:status:SUCCESS')
+
+    def _get_resource(self, resource):
+        """
+        Get a resource on the API.
+
+        :param resource: The HTTP resource.
+        :return: A dictionary of JSON.
+        """
+        url = urlparse.urljoin(self._server_url, resource)
+        return self._session.get(url).json()
+
+    def _get_running_builds(self):
+        """
+        Get all running builds.
+
+        :return: A list of builds.
+        """
+        running_builds = self._get_resource(self._RUNNING_BUILDS_RESOURCE)
+        if self._COUNT_ATTRIBUTE in running_builds:
+            return running_builds[self._BUILD_ATTRIBUTE]
+        return []
+
+    def _get_failed_builds(self):
+        """
+        Get all failed builds.
+
+        :return: A list of builds.
+        """
+        build_types = self._get_resource(self._BUILD_TYPES_RESOURCE)
+        if self._COUNT_ATTRIBUTE in build_types:
+            for build_type in build_types[self._BUILD_TYPE_ATTRIBUTE]:
+                build_type_id = build_type[self._ID_ATTRIBUTE]
+                build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(build_type_id=build_type_id)
+                failed_builds = self._get_resource(build_type_resource)
+                if self._COUNT_ATTRIBUTE in failed_builds:
+                    return failed_builds[self._BUILD_ATTRIBUTE]
+        return []
+
+    def _is_triggered_by_user(self, build):
+        """
+        Determines whether the build was triggered by the user.
+
+        :param build: The build JSON.
+        :return: True if the build was triggered by the user.
+        """
+        trigger = build[self._TRIGGERED_ATTRIBUTE]
+        return trigger[self._TYPE_ATTRIBUTE] == self._TYPE_USER and trigger[self._USER_ATTRIBUTE][self._USERNAME_ATTRIBUTE] == self._username
+
+    def _user_is_contributor_to_build(self, build):
+        """
+        Determines whether the user is a contributor to the build.
+
+        :param build: The build JSON.
+        :return: True if the user is a contributor to the build.
+        """
+        changes_resource = build[self._CHANGES_ATTRIBUTE]
+        changes = self._get_resource(changes_resource[self._HREF_ATTRIBUTE])
+        if self._COUNT_ATTRIBUTE in changes:
+            for change in changes[self._CHANGE_ATTRIBUTE]:
+                if change[self._USERNAME_ATTRIBUTE] == self._username:
+                    return True
+        return False
+
+    def _is_affected_by_user(self, build):
+        """
+        Determines whether the build was affected by the user.
+
+        :param build: The build JSON.
+        :return: True if the build was affected by the user.
+        """
+        return self._user_is_contributor_to_build(build) or self._is_triggered_by_user(build)
+
+    def _any_builds_helper(self, any_callable):
+        """
+        Iterate over builds returned by the callable method and return True if any build is affected by the user.
+
+        :param any_callable: A callable of arity 0.
+        :return: True if a build is affected by the user.
+        """
+        builds = any_callable()
+        for build in builds:
+            build_details = self._get_resource(build[self._HREF_ATTRIBUTE])
+            if self._is_affected_by_user(build_details):
+                return True
+        return False
 
     def any_builds_running(self):
         """
@@ -95,11 +192,7 @@ class TeamCityClient(BaseClient):
 
         :return: True if there are one or more builds running.
         """
-        resource = self._RUNNING_BUILDS_RESOURCE_TEMPLATE.format(username=self._username)
-        url = urlparse.urljoin(self._server_url, resource)
-        response = self._session.get(url)
-        json_data = response.json()
-        return self._COUNT_ATTRIBUTE in json_data
+        return self._any_builds_helper(self._get_running_builds)
 
     def any_build_failures(self):
         """
@@ -107,18 +200,4 @@ class TeamCityClient(BaseClient):
 
         :return: True if there are one or more builds have failed or are failing.
         """
-        any_build_failures = False
-        build_types_url = urlparse.urljoin(self._server_url, self._BUILD_TYPES_RESOURCE)
-        build_types_response = self._session.get(build_types_url)
-        build_types_json_data = build_types_response.json()
-        if self._COUNT_ATTRIBUTE in build_types_json_data:
-            for build_type in build_types_json_data[self._BUILD_TYPE_ATTRIBUTE]:
-                build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(username=self._username,
-                                                                                build_type_id=build_type[self._ID_ATTRIBUTE])
-                build_type_url = urlparse.urljoin(self._server_url, build_type_resource)
-                build_type_response = self._session.get(build_type_url)
-                build_type_json_data = build_type_response.json()
-                if self._COUNT_ATTRIBUTE in build_type_json_data:
-                    any_build_failures = True
-                    break
-        return any_build_failures
+        return self._any_builds_helper(self._get_failed_builds)
