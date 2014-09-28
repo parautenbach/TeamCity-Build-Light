@@ -102,6 +102,8 @@ class TestController(unittest.TestCase):
 
         # Mocks
         device = mock(devices.BaseDevice)
+        when(device).get_vendor_id().thenReturn(0)
+        when(device).get_product_id().thenReturn(0)
         device.send = send
         when(device).is_open().thenReturn(True)
         client = mock(clients.BaseClient)
