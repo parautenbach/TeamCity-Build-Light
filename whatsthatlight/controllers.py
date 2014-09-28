@@ -76,7 +76,14 @@ class Controller(object):
             :param any_builds_running: True if any builds running. None if unknown or undefined.
             :param any_build_failures: True if any builds failing or failed. None if unknown or undefined.
             """
+            last_build_state = self._build_state
             self._build_state = (any_builds_running, any_build_failures)
+            if self._build_state != last_build_state:
+                self._logger.info('Build server state changed: Running: {0}->{1}; Failures: {2}->{3}'
+                                  .format(last_build_state[0],
+                                          any_builds_running,
+                                          last_build_state[1],
+                                          any_build_failures))
             self._logger.debug('Build server state: any_builds_running={any_builds_running}, any_build_failures={any_build_failures}'
                                .format(any_builds_running=any_builds_running,
                                        any_build_failures=any_build_failures))
