@@ -1,10 +1,8 @@
-- Add logging
-- Add configuration
 - Create distributions
 - Test across platforms
 - Server exceptions
-- Colors:
--- Red: Failure
--- Green: Success
--- Yellow: Building
--- Blue: Unknown
+- Configurable colors
+- Gamma correction
+- Repo username differs from TeamCity username
+- Set server URL, username and password during setup
+- Customisation via plugin UI on TeamCity (is this even possible?)
