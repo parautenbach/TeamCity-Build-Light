@@ -203,6 +203,5 @@ class HidApiDevice(BaseDevice):
         """
         Close the device for communication.
         """
-        if self.is_open():
-            self._device.close()
+        self._device.close()
         self._is_open = False

@@ -63,7 +63,7 @@ class TestHidApiDevice(unittest.TestCase):
         self.assertTrue(device.is_open())
 
         # Off (none)
-        print('Off => None')
+        print('Off')
         device.off()
         time.sleep(wait_time)
 
@@ -88,12 +88,11 @@ class TestHidApiDevice(unittest.TestCase):
         time.sleep(wait_time)
 
         # Off (none)
-        print('Off => None')
+        print('Off')
         device.off()
         time.sleep(wait_time)
 
         # Close (twice, without problems)
-        device.close()
         device.close()
         self.assertFalse(device.is_open())
 
