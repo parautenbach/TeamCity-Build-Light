@@ -693,13 +693,6 @@ class TestTeamCityClient(unittest.TestCase):
             {{
                 "href": "/httpAuth/app/rest/changes/id:76",
                 "id": 76,
-                "user":
-                    {{
-                        "href": "/httpAuth/app/rest/users/id:1",
-                        "id": 1,
-                        "name": "Administrator",
-                        "username": "bar"
-                    }},
                 "username": "foo"
             }}
             """.format(username=username)

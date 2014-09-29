@@ -43,6 +43,7 @@ from whatsthatlight import clients
 from whatsthatlight import controllers
 from whatsthatlight import devices
 from whatsthatlight import monitors
+from whatsthatlight.test import constants
 
 
 class TestController(unittest.TestCase):
@@ -78,7 +79,7 @@ class TestController(unittest.TestCase):
         controller.stop()
 
     @staticmethod
-    @unittest.skipIf(True, 'Manual test')
+    @unittest.skipIf(constants.SKIP_MANUAL_TESTS, 'Manual test')
     def test_console():
         """
         Test the console script.
@@ -168,7 +169,7 @@ class TestController(unittest.TestCase):
         self.assertEqual(actual_data, expected_data_1)
 
     @staticmethod
-    @unittest.skipIf(True, 'Manual test')
+    @unittest.skipIf(constants.SKIP_MANUAL_TESTS, 'Manual test')
     def test_against_actual_device():
         """
         Test the controller works with an actual device.

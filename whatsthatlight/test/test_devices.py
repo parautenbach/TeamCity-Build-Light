@@ -35,6 +35,7 @@ from mockito import mock, when, any
 
 # Local imports
 from whatsthatlight import devices
+from whatsthatlight.test import constants
 
 
 class TestHidApiDevice(unittest.TestCase):
@@ -42,7 +43,7 @@ class TestHidApiDevice(unittest.TestCase):
     HID API device tests.
     """
 
-    @unittest.skipIf(True, 'Manual test')
+    @unittest.skipIf(constants.SKIP_MANUAL_TESTS, 'Manual test')
     def test_basic_sequence(self):
         """
         A basic open, write and close sequence against an actual device.

@@ -162,9 +162,10 @@ class TeamCityClient(BaseClient):
         if self._COUNT_ATTRIBUTE in changes and changes[self._COUNT_ATTRIBUTE] > 0:
             for change in changes[self._CHANGE_ATTRIBUTE]:
                 change_detail = self._get_resource(change[self._HREF_ATTRIBUTE])
-                user = change_detail[self._USER_ATTRIBUTE]
-                if user[self._USERNAME_ATTRIBUTE] == self._username:
-                    return True
+                if self._USER_ATTRIBUTE in change_detail:
+                    user = change_detail[self._USER_ATTRIBUTE]
+                    if user[self._USERNAME_ATTRIBUTE] == self._username:
+                        return True
         return False
 
     def _is_affected_by_user(self, build):
