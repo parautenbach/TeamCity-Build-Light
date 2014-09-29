@@ -131,7 +131,7 @@ class TeamCityClient(BaseClient):
         # CONSIDER: Omit archived projects?
         builds = []
         build_types = self._get_resource(self._BUILD_TYPES_RESOURCE)
-        if self._COUNT_ATTRIBUTE in build_types:
+        if self._COUNT_ATTRIBUTE in build_types and build_types[self._COUNT_ATTRIBUTE] > 0:
             for build_type in build_types[self._BUILD_TYPE_ATTRIBUTE]:
                 build_type_id = build_type[self._ID_ATTRIBUTE]
                 build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(build_type_id=build_type_id)
@@ -159,9 +159,11 @@ class TeamCityClient(BaseClient):
         """
         changes_resource = build[self._CHANGES_ATTRIBUTE]
         changes = self._get_resource(changes_resource[self._HREF_ATTRIBUTE])
-        if self._COUNT_ATTRIBUTE in changes:
+        if self._COUNT_ATTRIBUTE in changes and changes[self._COUNT_ATTRIBUTE] > 0:
             for change in changes[self._CHANGE_ATTRIBUTE]:
-                if change[self._USERNAME_ATTRIBUTE] == self._username:
+                change_detail = self._get_resource(change[self._HREF_ATTRIBUTE])
+                user = change_detail[self._USER_ATTRIBUTE]
+                if user[self._USERNAME_ATTRIBUTE] == self._username:
                     return True
         return False
 

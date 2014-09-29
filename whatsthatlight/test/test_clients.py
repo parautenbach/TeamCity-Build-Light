@@ -144,6 +144,7 @@ class TestTeamCityClient(unittest.TestCase):
         builds_resource = '/httpAuth/app/rest/builds/'
         build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
         changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
 
         # List of running builds
         running_builds_body = """
@@ -201,12 +202,30 @@ class TestTeamCityClient(unittest.TestCase):
             """.format(username=username)
         changes_response = (200, {}, changes_body)
 
+        # Change detail for a given change
+        change_detail_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response = (200, {}, change_detail_body)
+
         # Assemble responses
         responses = {
             expected_verb: {
                 builds_resource: [running_builds_response],
                 build_resource: [running_build_response],
-                changes_resource: [changes_response]
+                changes_resource: [changes_response],
+                change_detail_resource: [change_detail_response]
             }
         }
         event = threading.Event()
@@ -242,7 +261,152 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(3, len(requests))
+        self.assertEqual(4, len(requests))
+        for (actual_verb, _, actual_headers) in requests:
+            self.assertEqual(actual_verb, expected_verb)
+            self.assertDictContainsSubset(expected_headers_subset, actual_headers)
+        self.assertEqual(actual_any_builds_running, expected_any_builds_running)
+
+    def test_any_builds_running_positive_vcs_user_different(self):
+        """
+        Test for when there are builds running and the VCS user is mapped to the current user.
+        """
+        # Expectations
+        expected_any_builds_running = True
+        expected_verb = 'GET'
+        expected_headers_subset = {
+            'Accept': 'application/json'
+        }
+
+        # Test parameters
+        host = 'localhost'
+        port = utils.get_available_port()
+        server_url = 'http://{0}:{1}/'.format(host, port)
+        username = 'admin'
+        password = 'admin'
+
+        # Resources
+        builds_resource = '/httpAuth/app/rest/builds/'
+        build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
+        changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
+
+        # List of running builds
+        running_builds_body = """
+            {{
+                "count": 1,
+                "build":
+                    [
+                        {{
+                            "href": "{build_resource}",
+                            "buildTypeId": "Test_TestFoo",
+                            "id": 376
+                        }}
+                    ]
+            }}""".format(build_resource=build_resource)
+        running_builds_response = (200, {}, running_builds_body)
+
+        # The running build
+        running_build_body = """
+            {{
+                    "id": 376,
+                    "state": "running",
+                    "buildTypeId": "Test_TestFoo",
+                    "status": "SUCCESS",
+                    "triggered":
+                        {{
+                            "type": "user",
+                            "user":
+                                {{
+                                    "username": "{username}"
+                                }}
+                        }},
+                    "running": true,
+                    "changes":
+                        {{
+                            "href": "{changes_resource}?locator=build:(id:376)"
+                        }}
+            }}""".format(username=username, changes_resource=changes_resource)
+        running_build_response = (200, {}, running_build_body)
+
+        # Changes for build
+        changes_body = """
+            {{
+                "change":
+                    [
+                        {{
+                            "date": "20140928T150722+0200",
+                            "href": "/httpAuth/app/rest/changes/id:68",
+                            "id": 68,
+                            "username": "{username}"
+                        }}
+                    ],
+                "count": 1,
+                "href": "/httpAuth/app/rest/changes?locator=build:(id:376)"
+            }}
+            """.format(username=username)
+        changes_response = (200, {}, changes_body)
+
+        # Change detail for a given change
+        change_detail_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response = (200, {}, change_detail_body)
+
+        # Assemble responses
+        responses = {
+            expected_verb: {
+                builds_resource: [running_builds_response],
+                build_resource: [running_build_response],
+                changes_resource: [changes_response],
+                change_detail_resource: [change_detail_response]
+            }
+        }
+        event = threading.Event()
+        requests = []
+
+        # Callback
+        # noinspection PyUnusedLocal
+        def _callback(verb, path, headers):
+            """
+            Callback closure to capture responses.
+            """
+            requests.append((verb, path, headers))
+            event.set()
+
+        # Setup
+        client = clients.TeamCityClient(server_url=server_url,
+                                        username=username,
+                                        password=password)
+        server = _SimpleHttpServer(host=host,
+                                   port=port,
+                                   callback=_callback,
+                                   responses=responses)
+
+        # Execute
+        try:
+            server.start()
+            client.connect()
+            event.clear()
+            actual_any_builds_running = client.any_builds_running()
+            event.wait()
+        finally:
+            client.disconnect()
+            server.stop()
+
+        # Test
+        self.assertEqual(4, len(requests))
         for (actual_verb, _, actual_headers) in requests:
             self.assertEqual(actual_verb, expected_verb)
             self.assertDictContainsSubset(expected_headers_subset, actual_headers)
@@ -268,6 +432,7 @@ class TestTeamCityClient(unittest.TestCase):
         build_resource1 = '{builds_resource}id:376'.format(builds_resource=builds_resource)
         build_resource2 = '{builds_resource}id:377'.format(builds_resource=builds_resource)
         changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
 
         # List of running builds
         running_builds_body = """
@@ -360,13 +525,48 @@ class TestTeamCityClient(unittest.TestCase):
             """.format(username=username)
         changes_response2 = (200, {}, changes_body2)
 
+        # Change detail for a given change
+        change_detail_body1 = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "bar"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response1 = (200, {}, change_detail_body1)
+        change_detail_body2 = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response2 = (200, {}, change_detail_body2)
+
         # Assemble responses
         responses = {
             expected_verb: {
                 builds_resource: [running_builds_response],
                 build_resource1: [running_build_response1],
                 build_resource2: [running_build_response2],
-                changes_resource: [changes_response1, changes_response2]
+                changes_resource: [changes_response1,
+                                   changes_response2],
+                change_detail_resource: [change_detail_response1,
+                                         change_detail_response2]
             }
         }
         event = threading.Event()
@@ -402,7 +602,7 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(5, len(requests))
+        self.assertEqual(7, len(requests))
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
 
     def test_any_builds_running_positive_multiple_contributors(self):
@@ -424,6 +624,7 @@ class TestTeamCityClient(unittest.TestCase):
         builds_resource = '/httpAuth/app/rest/builds/'
         build_resource = '{builds_resource}id:376'.format(builds_resource=builds_resource)
         changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
 
         # List of running builds
         running_builds_body = """
@@ -487,12 +688,48 @@ class TestTeamCityClient(unittest.TestCase):
             """.format(username=username)
         changes_response = (200, {}, changes_body)
 
+        # Change detail for a given change
+        change_detail_body_other = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "bar"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response_other = (200, {}, change_detail_body_other)
+
+        # Change detail for a given change
+        change_detail_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "bas"
+            }}
+            """.format(username=username)
+        change_detail_response = (200, {}, change_detail_body)
+
         # Assemble responses
         responses = {
             expected_verb: {
                 builds_resource: [running_builds_response],
                 build_resource: [running_build_response],
-                changes_resource: [changes_response]
+                changes_resource: [changes_response],
+                change_detail_resource: [change_detail_response_other,
+                                         change_detail_response]
             }
         }
         event = threading.Event()
@@ -528,7 +765,7 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(3, len(requests))
+        self.assertEqual(5, len(requests))
         self.assertEqual(actual_any_builds_running, expected_any_builds_running)
 
     def test_any_builds_running_positive_triggered_by(self):
@@ -660,6 +897,7 @@ class TestTeamCityClient(unittest.TestCase):
         build_types_resource = '/httpAuth/app/rest/buildTypes'
         build_resource_a = '/httpAuth/app/rest/builds/id:378'
         changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
 
         # A list of builds
         build_types_body = """
@@ -726,13 +964,31 @@ class TestTeamCityClient(unittest.TestCase):
             """.format(username=username)
         changes_response = (200, {}, changes_body)
 
+        # Change detail for a given change
+        change_detail_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response = (200, {}, change_detail_body)
+
         # Assembly responses
         responses = {
             expected_verb: {
                 build_types_resource: [build_types_response],
                 build_type_resource: [build_types_response_a],
                 build_resource_a: [build_response_a],
-                changes_resource: [changes_response]
+                changes_resource: [changes_response],
+                change_detail_resource: [change_detail_response]
             }
         }
         event = threading.Event()
@@ -768,7 +1024,7 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(4, len(requests))
+        self.assertEqual(5, len(requests))
         self.assertEqual(actual_any_build_failures, expected_any_build_failures)
 
     def test_any_build_failures_positive_multiple_failed_builds(self):
@@ -793,6 +1049,7 @@ class TestTeamCityClient(unittest.TestCase):
         build_resource_c = '/httpAuth/app/rest/builds/id:380'
         build_resource_d = '/httpAuth/app/rest/builds/id:381'
         changes_resource = '/httpAuth/app/rest/changes'
+        change_detail_resource = '/httpAuth/app/rest/changes/id:68'
 
         # A list of builds
         build_types_body = """
@@ -893,6 +1150,40 @@ class TestTeamCityClient(unittest.TestCase):
             """.format(username=username)
         changes_response = (200, {}, changes_body)
 
+        # Change detail for a given change
+        change_detail_body_other = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "bar"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response_other = (200, {}, change_detail_body_other)
+
+        # Change detail for a given change
+        change_detail_body = """
+            {{
+                "href": "/httpAuth/app/rest/changes/id:76",
+                "id": 76,
+                "user":
+                    {{
+                        "href": "/httpAuth/app/rest/users/id:1",
+                        "id": 1,
+                        "name": "Administrator",
+                        "username": "{username}"
+                    }},
+                "username": "foo"
+            }}
+            """.format(username=username)
+        change_detail_response = (200, {}, change_detail_body)
+
         # Assembly responses
         responses = {
             expected_verb: {
@@ -905,7 +1196,11 @@ class TestTeamCityClient(unittest.TestCase):
                 changes_resource: [changes_response_other,
                                    changes_response_other,
                                    changes_response_other,
-                                   changes_response]
+                                   changes_response],
+                change_detail_resource: [change_detail_response_other,
+                                         change_detail_response_other,
+                                         change_detail_response_other,
+                                         change_detail_response]
             }
         }
         event = threading.Event()
@@ -941,7 +1236,7 @@ class TestTeamCityClient(unittest.TestCase):
             server.stop()
 
         # Test
-        self.assertEqual(11, len(requests))
+        self.assertEqual(15, len(requests))
         self.assertEqual(actual_any_build_failures, expected_any_build_failures)
 
     def test_any_build_failures_negative(self):
