@@ -1,8 +1,6 @@
 - Create distributions
 - Test across platforms
 - Server exceptions
-- Configurable colors
 - Gamma correction
-- Repo username differs from TeamCity username
 - Set server URL, username and password during setup
 - Customisation via plugin UI on TeamCity (is this even possible?)

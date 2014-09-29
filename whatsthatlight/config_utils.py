@@ -60,9 +60,9 @@ def load_device(config_parser):
     """
     namespace = config.get_device_namespace(config_parser)
     class_name = config.get_device_class_name(config_parser)
-    (vid, pid, hid_module_name) = config.get_device_args(config_parser)
-    hid_module = importlib.import_module(hid_module_name)
-    args = (vid, pid, hid_module)
+    args_list = list(config.get_device_args(config_parser))
+    args_list[2] = importlib.import_module(args_list[2])
+    args = tuple(args_list)
     return construct_class(namespace, class_name, args)
 
 

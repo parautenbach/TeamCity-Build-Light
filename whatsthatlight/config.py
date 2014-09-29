@@ -27,9 +27,9 @@ _DEVICE_SECTION = 'device'
 _SERVER_SECTION = 'server'
 # Default options
 # Generic (common/shared) options
-NAMESPACE_OPTION = 'namespace'
-CLASS_NAME_OPTION = 'class_name'
-CONSTRUCTOR_ARGS_OPTION = 'args'
+_NAMESPACE_OPTION = 'namespace'
+_CLASS_NAME_OPTION = 'class_name'
+_CONSTRUCTOR_ARGS_OPTION = 'args'
 
 
 def get_device_namespace(config_parser):
@@ -39,7 +39,7 @@ def get_device_namespace(config_parser):
     :param config_parser: A configuration parser.
     :returns: The namespace.
     """
-    return config_parser.get(_DEVICE_SECTION, NAMESPACE_OPTION)
+    return config_parser.get(_DEVICE_SECTION, _NAMESPACE_OPTION)
 
 
 def get_device_class_name(config_parser):
@@ -49,7 +49,7 @@ def get_device_class_name(config_parser):
     :param config_parser: A configuration parser.
     :returns: The class name.
     """
-    return config_parser.get(_DEVICE_SECTION, CLASS_NAME_OPTION)
+    return config_parser.get(_DEVICE_SECTION, _CLASS_NAME_OPTION)
 
 
 def get_device_args(config_parser):
@@ -59,7 +59,7 @@ def get_device_args(config_parser):
     :param config_parser: A configuration parser.
     :returns: The argument tuple.
     """
-    return ast.literal_eval(config_parser.get(_DEVICE_SECTION, CONSTRUCTOR_ARGS_OPTION))
+    return ast.literal_eval(config_parser.get(_DEVICE_SECTION, _CONSTRUCTOR_ARGS_OPTION))
 
 
 def get_client_namespace(config_parser):
@@ -69,7 +69,7 @@ def get_client_namespace(config_parser):
     :param config_parser: A configuration parser.
     :returns: The namespace.
     """
-    return config_parser.get(_SERVER_SECTION, NAMESPACE_OPTION)
+    return config_parser.get(_SERVER_SECTION, _NAMESPACE_OPTION)
 
 
 def get_client_class_name(config_parser):
@@ -79,7 +79,7 @@ def get_client_class_name(config_parser):
     :param config_parser: A configuration parser.
     :returns: The class name.
     """
-    return config_parser.get(_SERVER_SECTION, CLASS_NAME_OPTION)
+    return config_parser.get(_SERVER_SECTION, _CLASS_NAME_OPTION)
 
 
 def get_client_args(config_parser):
@@ -89,7 +89,7 @@ def get_client_args(config_parser):
     :param config_parser: A configuration parser.
     :returns: The argument tuple.
     """
-    return ast.literal_eval(config_parser.get(_SERVER_SECTION, CONSTRUCTOR_ARGS_OPTION))
+    return ast.literal_eval(config_parser.get(_SERVER_SECTION, _CONSTRUCTOR_ARGS_OPTION))
 
 
 class ConfigParser(BuiltinConfigParser.SafeConfigParser):

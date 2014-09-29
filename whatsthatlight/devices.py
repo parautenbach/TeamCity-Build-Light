@@ -27,17 +27,38 @@ class BaseDevice(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, vendor_id, product_id, hidapi):
+    _DEFAULT_RUNNING_COLOUR = (200, 120, 0)
+    _DEFAULT_SUCCESS_COLOUR = (0, 255, 0)
+    _DEFAULT_FAILURE_COLOUR = (230, 0, 0)
+    _DEFAULT_UNKNOWN_COLOUR = (0, 200, 255)
+    _OFF_COLOUR = (0, 0, 0)
+
+    def __init__(self,
+                 vendor_id,
+                 product_id,
+                 hidapi,
+                 running_colour=_DEFAULT_RUNNING_COLOUR,
+                 success_colour=_DEFAULT_SUCCESS_COLOUR,
+                 failure_colour=_DEFAULT_FAILURE_COLOUR,
+                 unknown_colour=_DEFAULT_UNKNOWN_COLOUR):
         """
         Constructor.
 
         :param vendor_id: The device's VID.
         :param product_id: The device's PID.
         :param hidapi: An imported HID API package/module. Write a wrapper if you need to.
+        :param running_colour: Colour to use when a build is running.
+        :param success_colour: Colour to use when all builds are passing.
+        :param failure_colour: Colour to use when one or more builds are failing.
+        :param unknown_colour: Colour to use when the build statuses are unknown.
         """
         self._vendor_id = vendor_id
         self._product_id = product_id
         self._device = hidapi.device()
+        self._running_colour = running_colour
+        self._success_colour = success_colour
+        self._failure_colour = failure_colour
+        self._unknown_colour = unknown_colour
 
     @abc.abstractmethod  # pragma: no cover
     def get_vendor_id(self):
@@ -94,23 +115,35 @@ class HidApiDevice(BaseDevice):
     Wrapper class for an HID device using the Cython HID API module.
     """
 
-    _DEFAULT_FAILURE_COLOUR = (230, 0, 0)
-    _DEFAULT_SUCCESS_COLOUR = (0, 255, 0)
-    _DEFAULT_UNDEFINED_COLOUR = (0, 200, 255)
-    _DEFAULT_RUNNING_COLOUR = (200, 120, 0)
-    _OFF_COLOUR = (0, 0, 0)
     _LED_NUMBER = 0
     _FADE_MILLIS = 100
 
-    def __init__(self, vendor_id, product_id, hidapi):
+    def __init__(self,
+                 vendor_id,
+                 product_id,
+                 hidapi,
+                 running_colour=BaseDevice._DEFAULT_RUNNING_COLOUR,
+                 success_colour=BaseDevice._DEFAULT_SUCCESS_COLOUR,
+                 failure_colour=BaseDevice._DEFAULT_FAILURE_COLOUR,
+                 unknown_colour=BaseDevice._DEFAULT_UNKNOWN_COLOUR):
         """
         Constructor.
 
         :param vendor_id: The device's VID.
         :param product_id: The device's PID.
         :param hidapi: An imported HID API package/module.
+        :param running_colour: Colour to use when a build is running.
+        :param success_colour: Colour to use when all builds are passing.
+        :param failure_colour: Colour to use when one or more builds are failing.
+        :param unknown_colour: Colour to use when the build statuses are unknown.
         """
-        super(HidApiDevice, self).__init__(vendor_id, product_id, hidapi)
+        super(HidApiDevice, self).__init__(vendor_id,
+                                           product_id,
+                                           hidapi,
+                                           running_colour,
+                                           success_colour,
+                                           failure_colour,
+                                           unknown_colour)
         self._packet_size = 64
         self._timeout = 50
         self._is_open = False
@@ -152,13 +185,13 @@ class HidApiDevice(BaseDevice):
         """
         # Running builds take precedence
         if any_builds_running is True:
-            return self._create_packet(HidApiDevice._DEFAULT_RUNNING_COLOUR)
+            return self._create_packet(self._running_colour)
         elif any_build_failures is True:
-            return self._create_packet(HidApiDevice._DEFAULT_FAILURE_COLOUR)
+            return self._create_packet(self._failure_colour)
         elif any_build_failures is False:
-            return self._create_packet(HidApiDevice._DEFAULT_SUCCESS_COLOUR)
+            return self._create_packet(self._success_colour)
         else:
-            return self._create_packet(HidApiDevice._DEFAULT_UNDEFINED_COLOUR)
+            return self._create_packet(self._unknown_colour)
 
     def _create_packet(self, colour):
         """
