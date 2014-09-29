@@ -118,7 +118,7 @@ class TeamCityClient(BaseClient):
         :return: A list of builds.
         """
         running_builds = self._get_resource(self._RUNNING_BUILDS_RESOURCE)
-        if self._COUNT_ATTRIBUTE in running_builds:
+        if self._COUNT_ATTRIBUTE in running_builds and running_builds[self._COUNT_ATTRIBUTE] > 0:
             return running_builds[self._BUILD_ATTRIBUTE]
         return []
 
@@ -135,7 +135,7 @@ class TeamCityClient(BaseClient):
                 build_type_id = build_type[self._ID_ATTRIBUTE]
                 build_type_resource = self._BUILD_TYPE_RESOURCE_TEMPLATE.format(build_type_id=build_type_id)
                 failed_builds = self._get_resource(build_type_resource)
-                if self._COUNT_ATTRIBUTE in failed_builds:
+                if self._COUNT_ATTRIBUTE in failed_builds and failed_builds[self._COUNT_ATTRIBUTE] > 0:
                     builds.extend(failed_builds[self._BUILD_ATTRIBUTE])
         return builds
 
