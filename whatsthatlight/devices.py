@@ -79,7 +79,7 @@ class BaseDevice(object):
     @abc.abstractmethod  # pragma: no cover
     def off(self):
         """
-        Switch off the device.
+        Switch off the LED.
         """
 
     @abc.abstractmethod  # pragma: no cover

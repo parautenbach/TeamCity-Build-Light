@@ -128,6 +128,7 @@ class TeamCityClient(BaseClient):
 
         :return: A list of builds.
         """
+        # CONSIDER: Omit archived projects?
         builds = []
         build_types = self._get_resource(self._BUILD_TYPES_RESOURCE)
         if self._COUNT_ATTRIBUTE in build_types:
