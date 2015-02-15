@@ -1,3 +1,3 @@
 #!/bin/bash
 
-nosetests -w whatsthatlight --with-xunit --with-coverage --cover-html --cover-inclusive --cover-package=whatsthatlight --verbosity=2 --cover-branches --nocapture
+nosetests -w whatsthatlight --with-xunit --with-coverage --cover-html --cover-inclusive --cover-package=whatsthatlight --verbosity=2 --cover-branches $@
