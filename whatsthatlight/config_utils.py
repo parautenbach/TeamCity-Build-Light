@@ -48,7 +48,7 @@ def create_logger(config_path):
     :param config_path: The configuration file path.
     """
     logging.config.fileConfig(config_path)
-    return logging.getLogger()
+    return logging.getLogger('build_light')
 
 
 def load_device(config_parser):

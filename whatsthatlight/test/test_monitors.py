@@ -26,6 +26,7 @@ Tests for various monitors.
 """
 
 # System imports
+import logging.config
 import threading
 import unittest
 
@@ -42,6 +43,12 @@ class TestDeviceMonitor(unittest.TestCase):
     """
     Device monitor tests.
     """
+
+    def setUp(self):
+        """
+        Test setup.
+        """
+        logging.config.fileConfig('../conf/build_light.ini')
 
     @staticmethod
     def test_start_stop():

@@ -25,6 +25,7 @@ Test the configuration utilities module.
 """
 
 # System imports
+import logging.config
 import os
 import StringIO
 import unittest
@@ -39,6 +40,12 @@ class TestConfigUtils(unittest.TestCase):
     """
     Tests for the configuration utilities module.
     """
+
+    def setUp(self):
+        """
+        Test setup.
+        """
+        logging.config.fileConfig('../conf/build_light.ini')
 
     def test_argument_parser(self):
         """

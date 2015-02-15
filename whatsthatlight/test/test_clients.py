@@ -28,6 +28,7 @@ Tests for various clients.
 
 # System imports
 import BaseHTTPServer
+import logging.config
 import SocketServer
 import threading
 import unittest
@@ -44,6 +45,12 @@ class TestTeamCityClient(unittest.TestCase):
     """
     TeamCity client tests.
     """
+
+    def setUp(self):
+        """
+        Test setup.
+        """
+        logging.config.fileConfig('../conf/build_light.ini')
 
     @staticmethod
     def test_connect_disconnect():
@@ -1415,6 +1422,13 @@ class _SimpleHttpServer(object):
                 self.end_headers()
                 self.wfile.write(body)
                 callback(verb, self.path, self.headers)
+
+            # noinspection PyShadowingBuiltins
+            def log_message(self, format, *args):
+                """
+                Override to do nothing.
+                """
+                pass
 
         self._httpd = SocketServer.TCPServer((host, port), _HttpCallbackHandler)
         self._httpd.allow_reuse_address = True

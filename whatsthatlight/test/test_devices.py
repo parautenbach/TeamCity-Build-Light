@@ -27,6 +27,7 @@ Tests for various devices.
 
 # System imports
 import importlib
+import logging.config
 import time
 import unittest
 
@@ -42,6 +43,12 @@ class TestHidApiDevice(unittest.TestCase):
     """
     HID API device tests.
     """
+
+    def setUp(self):
+        """
+        Test setup.
+        """
+        logging.config.fileConfig('../conf/build_light.ini')
 
     @unittest.skipIf(constants.SKIP_MANUAL_TESTS, 'Manual test')
     def test_basic_sequence(self):

@@ -28,6 +28,7 @@ Tests for the controller.
 # System imports
 import importlib
 import logging
+import logging.config
 import signal
 import subprocess
 import sys
@@ -55,8 +56,8 @@ class TestController(unittest.TestCase):
         """
         Test setup.
         """
-        logging.basicConfig()
-        logger = logging.getLogger()
+        logging.config.fileConfig('../conf/build_light.ini')
+        logger = logging.getLogger('build_light')
         logger.info('Logger set up')
 
     @staticmethod

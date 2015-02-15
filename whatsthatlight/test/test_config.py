@@ -25,6 +25,7 @@ Config module tests.
 """
 
 # System imports
+import logging.config
 import os
 import unittest
 import uuid
@@ -37,6 +38,12 @@ class TestConfig(unittest.TestCase):
     """
     Config module tests.
     """
+
+    def setUp(self):
+        """
+        Test setup.
+        """
+        logging.config.fileConfig('../conf/build_light.ini')
 
     def test_helpers(self):
         """
