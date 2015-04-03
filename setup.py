@@ -23,6 +23,8 @@ import pip.req
 import pypandoc
 import sys
 
+if 'sdist' in sys.argv:
+    pass
 
 # TODO: Prompt for username, password, server URL, vendor ID and product ID
 
@@ -35,8 +37,8 @@ if not platform.system() in ('Linux', 'Darwin'):
 data_files = []
 if os.geteuid() == 0:
     # Note: /etc/init/ is for Ubuntu's upstart scripts and must not be /etc/init.d/ (it also requires root access).
-    data_files = [('/etc/init/', ['conf/some.conf']),
-                  ('/etc/whatsthatlight/', ['conf/some.ini'])]
+    data_files = [('/etc/init/', ['scripts/upstart/build_light.conf']),
+                  ('/etc/whatsthatlight/', ['conf/build_light.ini'])]
 else:
     print('WARNING: System files of the package can only be installed using root privileges.')
 
@@ -46,10 +48,14 @@ requirements = [str(install_requirement.req) for install_requirement in install_
 
 # Convert the README from MD to reST
 readme = pypandoc.convert('README.md', 'rst')
+with open('README.rst', 'w') as readme_fd:
+    readme_fd.write(readme)
+
+import whatsthatlight
 
 # Install
-setup(name='whatsthatlight',
-      version='0.0.0.0',
+setup(name=whatsthatlight.__name__,
+      version=whatsthatlight.VERSION,
       description='TeamCity blink(1) build light',
       long_description=readme,
       # https://pypi.python.org/pypi?:action=list_classifiers

@@ -1424,11 +1424,13 @@ class _SimpleHttpServer(object):
                 callback(verb, self.path, self.headers)
 
             # noinspection PyShadowingBuiltins
+            # pylint: disable=redefined-builtin
             def log_message(self, format, *args):
                 """
                 Override to do nothing.
                 """
                 pass
+            # pylint: enable=redefined-builtin
 
         self._httpd = SocketServer.TCPServer((host, port), _HttpCallbackHandler)
         self._httpd.allow_reuse_address = True
