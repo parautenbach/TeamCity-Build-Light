@@ -4,3 +4,4 @@
 - Gamma correction
 - Set server URL, username and password during setup
 - Customisation via plugin UI on TeamCity (is this even possible?)
+- Websockets

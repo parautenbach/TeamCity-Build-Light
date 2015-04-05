@@ -174,6 +174,5 @@ class ServerMonitor(object):
                 except Exception, error:
                     self._logger.error(error)
                     self._handler(None, None)
-                finally:
-                    self._polling_event.wait(self._polling_interval)
                 # pylint: enable=broad-except
+            self._polling_event.wait(self._polling_interval)
